@@ -53,16 +53,18 @@ class PolicyEvaluation:
         # transitions p(s'|s)
         self.exp_transitions = np.sum(self.policy_transitions, axis=2)
 
-    def evaluate(self, min_delta=0.01):
+    def evaluate(self, min_delta=0.01, max_iterations=10_000):
         """
         Args:
             min_delta (float): Terminate policy evaluation if no state changes its value
                 by more than this.
         """
         assert min_delta > 0
-        while True:
+        for _ in range(max_iterations):
             v = self.values.copy()
             self.values = self.exp_rewards + self.discount * np.matmul(self.exp_transitions, v)
             deltas = np.abs(v-self.values)
             if np.max(deltas) < min_delta:
                 break
+        else:
+            print(f"Warning: with min_delta={min_delta}, policy iteration did not converge within max_iterations={max_iterations}!")
