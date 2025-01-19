@@ -47,7 +47,8 @@ class PolicyEvaluation:
         self.exp_rewards = np.sum(
             np.sum(self.policy_transitions * rewards, axis=2),
             axis=1,
-            keepdims=True)
+            keepdims=True,
+        )
         # After using self.policy_transitions to calculate the expected rewards, we no
         # longer need the action dimension, so we sum over it to receive the expected
         # transitions p(s'|s)
