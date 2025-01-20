@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class PolicyImprovement:
+class PolicyIteration:
     """
     Run iterated policy evaluation on a finite MDP.
     
@@ -101,3 +101,11 @@ class PolicyImprovement:
         #  ...         ]
         self.policy = np.identity(self.num_actions)[best_actions].reshape(self.policy.shape)
         self.update_probs()
+
+    def find_optimal_policy(self):
+        policy_stable = False
+        while not policy_stable:
+            old_policy = self.policy.copy()
+            self.evaluate()
+            self.improve_policy()
+            policy_stable = np.all(old_policy == self.policy)
