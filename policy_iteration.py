@@ -83,11 +83,24 @@ class PolicyIteration:
 
     def improve_policy(self):
         """Make the policy greedy with respect to the current value function estimate"""
+        # -----------------------OUTDATED COMMENT, SEE BELOW-----------------------------------
         # As self.values is of shape (state, 1), it would broadcast across self.reward of shape
         # (from_state, to_state, action) with the from_states, while we are looking to sum over
         # the to_states. So we first transpose it to be row vector, and then reshape it to ensure
         # correct broadcasting.
-        action_values = self.transitions * (self.rewards + self.discount * self.values.T.reshape((1, -1, 1)))
+        # ----------------------------UPDATED COMMENT-------------------------------------------
+        # After testing, it turns out self.rewards + self.discount * self.values also broadcasts
+        # correctly. This is because to broadcast, the dimensions are lined up like this:
+        #
+        #                        from states  to states    actions
+        #                        -------------------------------------
+        # self.rewards           num_states   num_states   num_actions
+        # self.values                         num_states   1
+        #                        -------------------------------------
+        # self.rewards + values  num_states   num_states   num_actions
+        #
+        # Where the values' from_states line up with the rewards' to_states. Neat!
+        action_values = self.transitions * (self.rewards + self.discount * self.values)
         action_values = np.sum(action_values, axis=1)
         best_actions = np.argmax(action_values, axis=1)
 
