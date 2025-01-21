@@ -41,8 +41,10 @@ class ValueIteration:
         # calculations later on.
         self.values = np.zeros((self.num_states, 1))
 
-    def find_optimal_policy(self, min_delta=1e-5, max_iterations=int(1e5)):
-        assert min_delta > 0
+        self.value_history = []
+
+    def find_optimal_policy(self, min_delta=1e-5, max_iterations=int(1e4)):
+        assert min_delta >= 0
         for _ in range(max_iterations):
             v = self.values.copy()
             # -----------------------OUTDATED COMMENT, SEE BELOW-----------------------------------
@@ -65,6 +67,7 @@ class ValueIteration:
             action_values = self.transitions * (self.rewards + self.discount * self.values)
             action_values = np.sum(action_values, axis=1)
             self.values = np.max(action_values, axis=1, keepdims=True)
+            self.value_history.append(self.values)
             deltas = np.abs(v-self.values)
             if np.max(deltas) < min_delta:
                 break
