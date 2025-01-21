@@ -1,0 +1,86 @@
+import numpy as np
+
+
+class ValueIteration:
+    """
+    Run iterated policy evaluation on a finite MDP.
+    
+    The shape of the arrays follows the
+    convention of "from->to," meaning that the first axis of length num_states is the
+    "from" axis, and the second (if present) is the "to" axis. This means that, for
+    example, transitions[12,15,3] is the probability of transitioning from state 12 to
+    state 15, given that action 3 was taken.
+    """
+    def __init__(self, transitions, rewards, discount=1.0, policy=None):
+        """
+        Args:
+            transitions (np.ndarray, shape (num_states, num_states, num_actions)):
+                Transition probabilities, where transitions[s,s',a]=p(s'|s,a).
+            rewards (np.ndarray, shape(num_states, num_states, num_actions)):
+                Rewards received for each transitions, where rewards[s,s',a]=r(s',s,a).
+            policy (np.ndarray, shape(num_states, num_actions)):
+                Policy pi to be evaluated, where policy[s,a]=pi(a|s).
+        """
+        self.num_actions = transitions.shape[-1]
+        self.num_states = transitions.shape[0]
+        
+        assert transitions.shape == rewards.shape
+        assert discount >= 0 and discount <= 1
+        if policy is None:
+            policy = np.ones((self.num_states, self.num_actions)) / self.num_actions
+        assert policy.shape == (self.num_states, self.num_actions)
+
+        self.transitions = transitions
+        self.rewards = rewards
+        self.discount = discount
+        # Reshaping the policy allows us to broadcast it across `transitions`, to
+        # calculate expected transitions under the policy.
+        self.policy = policy.reshape(self.num_states, 1, self.num_actions)
+
+        # The shape is chosen to make it a column vector, allowing for proper
+        # calculations later on.
+        self.values = np.zeros((self.num_states, 1))
+
+    def find_optimal_policy(self, min_delta=1e-5, max_iterations=int(1e5)):
+        assert min_delta > 0
+        for _ in range(max_iterations):
+            v = self.values.copy()
+            # -----------------------OUTDATED COMMENT, SEE BELOW-----------------------------------
+            # As self.values is of shape (state, 1), it would broadcast across self.reward of shape
+            # (from_state, to_state, action) with the from_states, while we are looking to sum over
+            # the to_states. So we first transpose it to be row vector, and then reshape it to ensure
+            # correct broadcasting.
+            # ----------------------------UPDATED COMMENT-------------------------------------------
+            # After testing, it turns out self.rewards + self.discount * self.values also broadcasts
+            # correctly. This is because to broadcast, the dimensions are lined up like this:
+            #
+            #                        from states  to states    actions
+            #                        -------------------------------------
+            # self.rewards           num_states   num_states   num_actions
+            # self.values                         num_states   1
+            #                        -------------------------------------
+            # self.rewards + values  num_states   num_states   num_actions
+            #
+            # Where the values' from_states line up with the rewards' to_states. Neat!
+            action_values = self.transitions * (self.rewards + self.discount * self.values)
+            action_values = np.sum(action_values, axis=1)
+            self.values = np.max(action_values, axis=1, keepdims=True)
+            deltas = np.abs(v-self.values)
+            if np.max(deltas) < min_delta:
+                break
+        else:
+            print((
+                f"Warning: with min_delta={min_delta}, "
+                f"policy evaluation did not converge within max_iterations={max_iterations}!"
+            ))
+
+        # np.identity(n) is the n x n matrix with ones on the diagonal, and zeros
+        # everywhere else. So np.identity(4)[2] is [0, 0, 1, 0]. As best_actions is
+        # a vector of the indices of the best actions, like [[2], [0], [1], ...]
+        # np.identity(self.num_actions)[best_actions] is the greedy policy in the shape
+        # [[0, 0, 1, 0],
+        #  [1, 0, 0, 0],
+        #  [0, 1, 0, 0],
+        #  ...         ]
+        best_actions = np.argmax(action_values, axis=1)
+        self.policy = np.identity(self.num_actions)[best_actions].reshape(self.policy.shape)
