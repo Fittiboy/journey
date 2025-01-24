@@ -8,7 +8,8 @@ from IPython.display import Image
 
 
 class WindyGridWorld:
-    def __init__(self):
+    def __init__(self, name=None):
+        self.name = name
         self.height = 7
         self.width = 10
         self.grid = np.zeros((self.height, self.width), dtype=int)
@@ -77,17 +78,21 @@ class WindyGridWorld:
             pos = np.unravel_index(state, self.grid.shape)
             sns.heatmap(self.full_state(pos), ax=ax, cbar=False)
             ax.axis('off')
-            plt.savefig('temp_frame_wgw.png', bbox_inches='tight', pad_inches=0)
-            frames.append(imageio.v2.imread('temp_frame_wgw.png'))
+            plt.savefig('animations/temp_frame.png', bbox_inches='tight', pad_inches=0)
+            frames.append(imageio.v2.imread('animations/temp_frame.png'))
             plt.close()
-        
-        imageio.mimsave('episode_heatmap_wgw.gif', frames, fps=2, loop=0)
-        os.remove('temp_frame_wgw.png')
+
+        if self.name is None:
+            filename = 'episode_heatmap_wgw.gif'
+        else:
+            filename = f'episode_heatmap_{self.name}.gif'
+        imageio.mimsave('animations/' + filename, frames, fps=2, loop=0)
+        os.remove('animations/temp_frame.png')
 
 
 class StochasticWindyGridWorld(WindyGridWorld):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name=None):
+        super().__init__(name)
 
     def step(self, action_index):
         terminal = False

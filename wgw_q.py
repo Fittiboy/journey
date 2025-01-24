@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class Sarsa:
+class QLearning:
     def __init__(self, epsilon, alpha, grid_world):
         self.alpha = alpha
         self.epsilon = epsilon
@@ -27,15 +27,15 @@ class Sarsa:
             ep_length = 0
             while not done:
                 ep_length += 1
+                action = self.select_action(state)
                 new_state, reward, done = self.grid_world.step(action)
-                new_action = self.select_action(new_state)
                 if done:
                     self.Q[state, action] += self.alpha * (reward - self.Q[state, action])
                 else:
                     self.Q[state, action] += self.alpha * (
-                        reward + self.Q[new_state, new_action] - self.Q[state, action]
+                        reward + np.max(self.Q[new_state]) - self.Q[state, action]
                     )
-                state, action = new_state, new_action
+                state = new_state
             self.ep_lengths.append(ep_length)
 
     def plot_ep_lengths(self):
