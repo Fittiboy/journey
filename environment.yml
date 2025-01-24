@@ -134,7 +134,6 @@ dependencies:
   - conda-forge/linux-64::libxml2==2.13.5=h8d12d68_1
   - conda-forge/linux-64::mysql-libs==9.0.1=he0572af_4
   - conda-forge/linux-64::p11-kit==0.24.1=hc5aa10d_0
-  - conda-forge/linux-64::python==3.12.8=h9e4cc4f_1_cpython
   - conda-forge/linux-64::wayland==1.23.1=h3e06ad9_0
   - conda-forge/linux-64::xcb-util==0.4.1=hb711507_2
   - conda-forge/linux-64::xcb-util-keysyms==0.4.1=hb711507_0
@@ -388,4 +387,5 @@ dependencies:
   - pytorch/linux-64::torchaudio==2.5.1=py312_cu124
   - pytorch/linux-64::torchtriton==3.1.0=py312
   - pytorch/linux-64::torchvision==0.20.1=py312_cu124
+  - python==3.12.8
 prefix: /home/fitti/.conda/envs/journey
