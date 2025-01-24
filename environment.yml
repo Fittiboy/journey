@@ -164,6 +164,7 @@ dependencies:
   - defaults/linux-64::jupyterlab==4.2.5=py312h06a4308_0
   - defaults/linux-64::notebook==7.2.2=py312h06a4308_1
   - defaults/linux-64::jupyter==1.0.0=py312h06a4308_9
+  - python==3.12.8
   - pandoc
   - graphviz
   - imageio
