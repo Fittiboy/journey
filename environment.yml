@@ -2,9 +2,6 @@ name: journey
 channels:
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
-  - nvidia
-  - pytorch-cuda
-  - pytorch
 dependencies:
   - defaults/linux-64::_libgcc_mutex==0.1=main
   - defaults/linux-64::ca-certificates==2024.12.31=h06a4308_0
@@ -168,17 +165,17 @@ dependencies:
   - defaults/linux-64::notebook==7.2.2=py312h06a4308_1
   - defaults/linux-64::jupyter==1.0.0=py312h06a4308_9
   - python==3.12.8
-  - pandoc
-  - graphviz
-  - imageio
-  - numpy
-  - gymnasium
-  - matplotlib
-  - pytorch
-  - pytorch-cuda=12.4
-  - torchaudio
-  - torchvision
-  - seaborn
+  - conda-forge::pandoc
+  - conda-forge::graphviz
+  - conda-forge::imageio
+  - conda-forge::numpy
+  - conda-forge::gymnasium
+  - conda-forge::matplotlib
+  - pytorch::pytorch
+  - pytorch::pytorch-cuda=12.4
+  - pytorch::torchaudio
+  - pytorch::torchvision
+  - conda-forge::seaborn
   - conda-forge::stable-baselines3
   - conda-forge::tqdm
 prefix: /home/fitti/.conda/envs/journey
