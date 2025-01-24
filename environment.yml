@@ -165,4 +165,16 @@ dependencies:
   - defaults/linux-64::notebook==7.2.2=py312h06a4308_1
   - defaults/linux-64::jupyter==1.0.0=py312h06a4308_9
   - pandoc
+  - graphviz
+  - imageio
+  - numpy
+  - gymnasium
+  - matplotlib
+  - pytorch
+  - pytorch-cuda=12.4
+  - torchaudio
+  - torchvision
+  - seaborn
+  - conda-forge::stable-baselines3
+  - conda-forge::tqdm
 prefix: /home/fitti/.conda/envs/journey
