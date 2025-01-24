@@ -1,78 +1,203 @@
 name: journey
 channels:
+  - defaults
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
 dependencies:
-  - defaults/linux-64::_libgcc_mutex==0.1=main
+  - conda-forge/linux-64::pandoc==3.6.2=ha770c72_0
+  - conda-forge/linux-64::_libgcc_mutex==0.1=conda_forge
+  - defaults/linux-64::blas==1.0=mkl
   - defaults/linux-64::ca-certificates==2024.12.31=h06a4308_0
+  - defaults/noarch::cuda-version==12.4=hbda6634_3
+  - defaults/noarch::font-ttf-dejavu-sans-mono==2.37=hd3eb1b0_0
+  - defaults/noarch::font-ttf-inconsolata==2.001=hcb22688_0
+  - defaults/noarch::font-ttf-source-code-pro==2.030=hd3eb1b0_0
+  - defaults/noarch::font-ttf-ubuntu==0.83=h8b1ccd4_0
+  - defaults/linux-64::intel-openmp==2022.0.1=h06a4308_3633
   - defaults/linux-64::ld_impl_linux-64==2.40=h12ee557_0
-  - defaults/linux-64::libstdcxx-ng==11.2.0=h1234567_1
-  - defaults/noarch::tzdata==2024b=h04d1e81_0
-  - defaults/linux-64::libgomp==11.2.0=h1234567_1
-  - defaults/linux-64::_openmp_mutex==5.1=1_gnu
-  - defaults/linux-64::libgcc-ng==11.2.0=h1234567_1
+  - conda-forge/linux-64::libglvnd==1.7.0=ha4b6fd6_2
+  - conda-forge/linux-64::python_abi==3.12=5_cp312
+  - pytorch/noarch::pytorch-mutex==1.0=cuda
+  - defaults/noarch::tzdata==2025a=h04d1e81_0
+  - defaults/noarch::cuda-cudart_linux-64==12.4.127=hd681fbe_0
+  - defaults/noarch::fonts-anaconda==1=h8fa9717_0
+  - conda-forge/linux-64::libegl==1.7.0=ha4b6fd6_2
+  - conda-forge/linux-64::libgomp==14.2.0=h77fa898_1
+  - conda-forge/linux-64::libopengl==1.7.0=ha4b6fd6_2
+  - conda-forge/linux-64::_openmp_mutex==4.5=2_gnu
+  - defaults/noarch::fonts-conda-ecosystem==1=hd3eb1b0_0
+  - conda-forge/linux-64::libgcc==14.2.0=h77fa898_1
+  - conda-forge/linux-64::alsa-lib==1.2.13=hb9d3cd8_0
+  - conda-forge/linux-64::libdeflate==1.23=h4ddbbb0_0
+  - conda-forge/linux-64::libexpat==2.6.4=h5888daf_0
+  - conda-forge/linux-64::libgcc-ng==14.2.0=h69a702a_1
+  - conda-forge/linux-64::libgfortran5==14.2.0=hd5240d6_1
+  - conda-forge/linux-64::liblzma==5.6.3=hb9d3cd8_1
+  - conda-forge/linux-64::libstdcxx==14.2.0=hc0a3c3a_1
+  - conda-forge/linux-64::libwebp-base==1.5.0=h851e524_0
+  - conda-forge/linux-64::libzlib==1.3.1=hb9d3cd8_2
+  - conda-forge/linux-64::ncurses==6.5=h2d0b736_2
+  - conda-forge/linux-64::openssl==3.4.0=h7b32b05_1
+  - conda-forge/linux-64::xorg-libice==1.1.2=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxau==1.0.12=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxdmcp==1.1.5=hb9d3cd8_0
+  - conda-forge/linux-64::attr==2.5.1=h166bdaf_1
   - defaults/linux-64::bzip2==1.0.8=h5eee18b_6
-  - defaults/linux-64::c-ares==1.19.1=h5eee18b_0
-  - defaults/linux-64::expat==2.6.4=h6a678d5_0
-  - defaults/linux-64::icu==73.1=h6a678d5_0
-  - defaults/linux-64::jpeg==9e=h5eee18b_3
-  - defaults/linux-64::libabseil==20240116.2=cxx17_h6a678d5_0
-  - defaults/linux-64::libev==4.33=h7f8727e_1
-  - defaults/linux-64::libffi==3.4.4=h6a678d5_1
-  - defaults/linux-64::libiconv==1.16=h5eee18b_3
-  - defaults/linux-64::libsodium==1.0.18=h7b6447c_0
-  - defaults/linux-64::libuuid==1.41.5=h5eee18b_0
-  - defaults/linux-64::libxcb==1.15=h7f8727e_0
-  - defaults/linux-64::lz4-c==1.9.4=h6a678d5_1
-  - defaults/linux-64::ncurses==6.4=h6a678d5_0
-  - defaults/linux-64::openssl==3.0.15=h5eee18b_0
-  - defaults/linux-64::xz==5.4.6=h5eee18b_1
-  - defaults/linux-64::yaml==0.2.5=h7b6447c_0
-  - defaults/linux-64::zlib==1.2.13=h5eee18b_1
-  - defaults/linux-64::libcups==2.4.2=h2d74bed_1
+  - defaults/linux-64::fribidi==1.0.10=h7b6447c_0
+  - conda-forge/linux-64::gettext-tools==0.22.5=he02047a_3
+  - defaults/linux-64::giflib==5.2.2=h5eee18b_0
+  - defaults/linux-64::lame==3.100=h7b6447c_0
   - defaults/linux-64::libedit==3.1.20230828=h5eee18b_0
-  - defaults/linux-64::libllvm14==14.0.6=hecde1de_4
-  - defaults/linux-64::libnghttp2==1.57.0=h2d74bed_0
-  - defaults/linux-64::libpng==1.6.39=h5eee18b_0
-  - defaults/linux-64::libprotobuf==4.25.3=he621ea3_0
-  - defaults/linux-64::libssh2==1.11.1=h251f7ec_0
-  - defaults/linux-64::libxml2==2.13.5=hfdd30dd_0
-  - defaults/linux-64::pcre2==10.42=hebb0a14_1
+  - defaults/linux-64::libevent==2.1.12=hdbd6064_1
+  - conda-forge/linux-64::libgettextpo==0.22.5=he02047a_3
+  - conda-forge/linux-64::libgfortran==14.2.0=h69a702a_1
+  - defaults/linux-64::libgpg-error==1.51=h5eee18b_0
+  - conda-forge/linux-64::libiconv==1.17=hd590300_2
+  - defaults/linux-64::libjpeg-turbo==3.0.3=h5eee18b_0
+  - conda-forge/linux-64::libnsl==2.0.1=hd590300_0
+  - defaults/linux-64::libntlm==1.6=h7f8727e_0
+  - defaults/linux-64::libogg==1.3.5=h27cfd23_1
+  - defaults/linux-64::libopus==1.3.1=h5eee18b_1
+  - conda-forge/linux-64::libpciaccess==0.18=hd590300_0
+  - conda-forge/linux-64::libpng==1.6.45=h943b412_0
+  - defaults/linux-64::libsodium==1.0.18=h7b6447c_0
+  - conda-forge/linux-64::libsqlite==3.48.0=hee588c1_1
+  - conda-forge/linux-64::libstdcxx-ng==14.2.0=h4852527_1
+  - defaults/linux-64::libtasn1==4.19.0=h5eee18b_0
+  - defaults/linux-64::libunistring==0.9.10=h27cfd23_0
+  - conda-forge/linux-64::libuuid==2.38.1=h0b41bf4_0
+  - conda-forge/linux-64::libxcrypt==4.4.36=hd590300_1
+  - conda-forge/linux-64::llvm-openmp==15.0.7=h0cdce71_0
+  - conda-forge/linux-64::lz4-c==1.10.0=h5888daf_1
+  - conda-forge/linux-64::mpg123==1.32.9=hc50e24c_0
+  - conda-forge/linux-64::mysql-common==9.0.1=h266115a_4
+  - conda-forge/linux-64::nettle==3.9.1=h7ab15ed_0
+  - conda-forge/linux-64::nspr==4.36=h5888daf_0
+  - defaults/linux-64::ocl-icd==2.3.2=h5eee18b_1
+  - conda-forge/linux-64::pixman==0.44.2=h29eaf8c_0
+  - defaults/linux-64::pthread-stubs==0.3=h0ce48e5_1
   - defaults/linux-64::readline==8.2=h5eee18b_0
-  - defaults/linux-64::tk==8.6.14=h39e8969_0
+  - conda-forge/linux-64::tk==8.6.13=noxft_h4845f30_101
+  - conda-forge/linux-64::x264==1!164.3095=h166bdaf_2
+  - defaults/linux-64::yaml==0.2.5=h7b6447c_0
+  - conda-forge/linux-64::aom==3.6.1=h59595ed_0
+  - defaults/linux-64::cuda-cudart==12.4.127=h99ab3db_0
+  - defaults/linux-64::cuda-cupti==12.4.127=h6a678d5_1
+  - defaults/linux-64::cuda-nvrtc==12.4.127=h99ab3db_1
+  - defaults/linux-64::cuda-nvtx==12.4.127=h6a678d5_1
+  - defaults/linux-64::cuda-opencl==12.4.127=h6a678d5_0
+  - conda-forge/linux-64::double-conversion==3.3.0=h59595ed_0
+  - defaults/linux-64::expat==2.6.4=h6a678d5_0
+  - conda-forge/linux-64::freetype==2.12.1=h267a509_2
+  - defaults/linux-64::gmp==6.2.1=h295c915_3
+  - defaults/linux-64::graphite2==1.3.14=h295c915_1
+  - conda-forge/linux-64::icu==75.1=he02047a_0
+  - defaults/linux-64::krb5==1.21.3=h143b758_0
+  - defaults/linux-64::lerc==4.0.0=h6a678d5_0
+  - conda-forge/linux-64::libasprintf==0.22.5=he8f35ee_3
+  - conda-forge/linux-64::libcap==2.71=h39aace5_0
+  - defaults/linux-64::libcufft==11.2.1.3=h99ab3db_1
+  - defaults/linux-64::libcufile==1.9.1.3=h99ab3db_1
+  - defaults/linux-64::libcurand==10.3.5.147=h99ab3db_1
+  - conda-forge/linux-64::libdrm==2.4.124=hb9d3cd8_0
+  - defaults/linux-64::libffi==3.4.4=h6a678d5_1
+  - conda-forge/linux-64::libgcrypt-lib==1.11.0=hb9d3cd8_2
+  - conda-forge/linux-64::libgettextpo-devel==0.22.5=he02047a_3
+  - defaults/linux-64::libidn2==2.3.4=h5eee18b_0
+  - defaults/linux-64::libnpp==12.2.5.30=h99ab3db_1
+  - defaults/linux-64::libnvfatbin==12.4.127=h7934f7d_2
+  - defaults/linux-64::libnvjitlink==12.4.127=h99ab3db_1
+  - defaults/linux-64::libnvjpeg==12.3.1.117=h6a678d5_1
+  - defaults/linux-64::libvorbis==1.3.7=h7b6447c_0
+  - defaults/linux-64::libvpx==1.13.1=h6a678d5_0
+  - conda-forge/linux-64::libxcb==1.17.0=h8a09558_0
+  - defaults/linux-64::mkl==2022.1.0=hc2b9512_224
+  - defaults/linux-64::ninja-base==1.12.1=hdb19cb5_0
+  - conda-forge/linux-64::nss==3.107=hdf54f9c_0
+  - conda-forge/linux-64::openh264==2.3.1=hcb278e6_2
+  - conda-forge/linux-64::pcre2==10.44=hba22ea6_2
+  - conda-forge/linux-64::svt-av1==1.4.1=hcb278e6_0
+  - conda-forge/linux-64::x265==3.5=h924138e_3
+  - conda-forge/linux-64::xorg-libsm==1.2.5=he73a12e_0
   - defaults/linux-64::zeromq==4.3.5=h6a678d5_0
-  - defaults/linux-64::zstd==1.5.6=hc292b87_0
-  - defaults/linux-64::freetype==2.12.1=h4a9f257_0
-  - defaults/linux-64::krb5==1.20.1=h143b758_1
-  - defaults/linux-64::libclang13==14.0.6=default_he11475f_2
-  - defaults/linux-64::libglib==2.78.4=hdc74915_0
-  - defaults/linux-64::libxkbcommon==1.0.1=h097e994_2
-  - defaults/linux-64::sqlite==3.45.3=h5eee18b_0
-  - defaults/linux-64::cyrus-sasl==2.1.28=h52b45da_1
-  - defaults/linux-64::fontconfig==2.14.1=h55d465d_3
-  - defaults/linux-64::glib-tools==2.78.4=h6a678d5_0
-  - defaults/linux-64::libclang==14.0.6=default_hc6dbbc7_2
-  - defaults/linux-64::libcurl==8.11.1=hc9e6f67_0
-  - defaults/linux-64::python==3.12.8=h5148396_0
+  - conda-forge/linux-64::zstd==1.5.6=ha6fb4c9_0
+  - conda-forge/linux-64::cyrus-sasl==2.1.27=h54b06d7_7
+  - conda-forge/linux-64::fontconfig==2.15.0=h7e30c49_1
+  - conda-forge/linux-64::libasprintf-devel==0.22.5=he8f35ee_3
+  - conda-forge/linux-64::libblas==3.9.0=16_linux64_mkl
+  - defaults/linux-64::libcublas==12.4.5.8=h99ab3db_1
+  - conda-forge/linux-64::libcups==2.3.3=h4637d8d_4
+  - defaults/linux-64::libcusparse==12.3.1.170=h99ab3db_1
+  - conda-forge/linux-64::libglib==2.82.2=h2ff4ddf_1
+  - conda-forge/linux-64::libsystemd0==257.2=h3dc2cb9_0
+  - conda-forge/linux-64::libtiff==4.7.0=hd9ff511_3
+  - conda-forge/linux-64::libxml2==2.13.5=h8d12d68_1
+  - conda-forge/linux-64::mysql-libs==9.0.1=he0572af_4
+  - conda-forge/linux-64::p11-kit==0.24.1=hc5aa10d_0
+  - conda-forge/linux-64::python==3.12.8=h9e4cc4f_1_cpython
+  - conda-forge/linux-64::wayland==1.23.1=h3e06ad9_0
+  - conda-forge/linux-64::xcb-util==0.4.1=hb711507_2
+  - conda-forge/linux-64::xcb-util-keysyms==0.4.1=hb711507_0
+  - conda-forge/linux-64::xcb-util-renderutil==0.3.10=hb711507_0
+  - conda-forge/linux-64::xcb-util-wm==0.4.2=hb711507_0
+  - conda-forge/linux-64::xorg-libx11==1.8.10=h4f16b4b_1
+  - defaults/linux-64::aiohappyeyeballs==2.4.4=py312h06a4308_0
+  - defaults/linux-64::aiosqlite==0.18.0=py312h06a4308_0
+  - defaults/linux-64::annotated-types==0.6.0=py312h06a4308_0
   - defaults/linux-64::async-lru==2.0.4=py312h06a4308_0
   - defaults/linux-64::attrs==24.3.0=py312h06a4308_0
+  - defaults/linux-64::babel==2.16.0=py312h06a4308_0
   - defaults/linux-64::brotli-python==1.0.9=py312h6a678d5_9
   - defaults/linux-64::certifi==2024.12.14=py312h06a4308_0
   - defaults/noarch::charset-normalizer==3.3.2=pyhd3eb1b0_0
+  - defaults/linux-64::click==8.1.7=py312h06a4308_0
+  - defaults/linux-64::cloudpickle==3.0.0=py312h06a4308_0
+  - defaults/linux-64::colorama==0.4.6=py312h06a4308_0
+  - defaults/noarch::cycler==0.11.0=pyhd3eb1b0_0
   - defaults/linux-64::debugpy==1.8.11=py312h6a678d5_0
   - defaults/noarch::decorator==5.1.1=pyhd3eb1b0_0
+  - conda-forge/noarch::deepmerge==2.0=pyhd8ed1ab_0
   - defaults/noarch::defusedxml==0.7.1=pyhd3eb1b0_0
   - defaults/noarch::executing==0.8.3=pyhd3eb1b0_0
-  - defaults/linux-64::glib==2.78.4=h6a678d5_0
+  - defaults/linux-64::farama-notifications==0.0.4=py312h06a4308_0
+  - defaults/linux-64::filelock==3.13.1=py312h06a4308_0
+  - defaults/linux-64::frozenlist==1.5.0=py312h5eee18b_0
+  - defaults/linux-64::fsspec==2024.12.0=py312h06a4308_0
+  - conda-forge/linux-64::gdk-pixbuf==2.42.12=hb9ae30d_0
+  - conda-forge/linux-64::gettext==0.22.5=he02047a_3
+  - conda-forge/linux-64::glib-tools==2.82.2=h4833e2c_1
+  - conda-forge/linux-64::gnutls==3.7.9=hb077bed_0
+  - defaults/linux-64::greenlet==3.1.1=py312h6a678d5_0
   - defaults/linux-64::h11==0.14.0=py312h06a4308_0
+  - defaults/noarch::heapdict==1.0.1=pyhd3eb1b0_0
   - defaults/linux-64::idna==3.7=py312h06a4308_0
+  - defaults/linux-64::importlib_resources==6.4.0=py312h06a4308_0
   - defaults/linux-64::json5==0.9.25=py312h06a4308_0
+  - defaults/noarch::jsonpointer==2.1=pyhd3eb1b0_0
   - defaults/linux-64::jupyterlab_widgets==3.0.13=py312h06a4308_0
+  - defaults/linux-64::kiwisolver==1.4.8=py312h6a678d5_0
+  - conda-forge/linux-64::lcms2==2.16=hb7c19ff_0
+  - conda-forge/linux-64::libcblas==3.9.0=16_linux64_mkl
+  - defaults/linux-64::libcusolver==11.6.1.9=h99ab3db_1
+  - conda-forge/linux-64::libgd==2.3.3=h6f5c62b_11
+  - conda-forge/linux-64::libglx==1.7.0=ha4b6fd6_2
+  - conda-forge/linux-64::liblapack==3.9.0=16_linux64_mkl
+  - conda-forge/linux-64::libllvm19==19.1.7=ha7bfdaf_0
+  - conda-forge/linux-64::libwebp==1.5.0=hae8dbeb_0
+  - defaults/linux-64::libxslt==1.1.41=h097e994_0
+  - defaults/linux-64::locket==1.0.0=py312h06a4308_0
   - defaults/linux-64::markupsafe==2.1.3=py312h5eee18b_1
   - defaults/linux-64::mistune==2.0.4=py312h06a4308_0
-  - defaults/linux-64::mysql==8.4.0=h29a9f33_1
+  - defaults/linux-64::mpmath==1.3.0=py312h06a4308_0
+  - defaults/linux-64::msgpack-python==1.0.3=py312hdb19cb5_0
+  - defaults/linux-64::multidict==6.1.0=py312h5eee18b_0
+  - defaults/linux-64::mypy_extensions==1.0.0=py312h06a4308_0
   - defaults/linux-64::nest-asyncio==1.6.0=py312h06a4308_0
-  - defaults/linux-64::openldap==2.6.4=h42fbc30_0
+  - defaults/linux-64::networkx==3.4.2=py312h06a4308_0
+  - defaults/linux-64::ninja==1.12.1=h06a4308_0
+  - conda-forge/linux-64::openjpeg==2.5.3=h5fbd93e_0
+  - conda-forge/linux-64::openldap==2.6.9=he970967_0
+  - defaults/linux-64::orjson==3.10.14=py312h4aa5aa6_0
   - defaults/linux-64::overrides==7.4.0=py312h06a4308_0
   - defaults/linux-64::packaging==24.2=py312h06a4308_0
   - defaults/noarch::pandocfilters==1.5.0=pyhd3eb1b0_0
@@ -80,15 +205,19 @@ dependencies:
   - defaults/linux-64::platformdirs==3.10.0=py312h06a4308_0
   - defaults/linux-64::ply==3.11=py312h06a4308_1
   - defaults/linux-64::prometheus_client==0.21.0=py312h06a4308_0
+  - defaults/linux-64::propcache==0.2.0=py312h5eee18b_0
   - defaults/linux-64::psutil==5.9.0=py312h5eee18b_1
   - defaults/noarch::ptyprocess==0.7.0=pyhd3eb1b0_2
   - defaults/noarch::pure_eval==0.2.2=pyhd3eb1b0_0
   - defaults/noarch::pycparser==2.21=pyhd3eb1b0_0
   - defaults/linux-64::pygments==2.15.1=py312h06a4308_1
-  - defaults/linux-64::pyqt5-sip==12.13.0=py312h5eee18b_0
+  - defaults/linux-64::pyparsing==3.2.0=py312h06a4308_0
+  - defaults/linux-64::pyqt5-sip==12.13.0=py312h5eee18b_1
   - defaults/linux-64::pysocks==1.7.1=py312h06a4308_0
   - defaults/linux-64::python-fastjsonschema==2.20.0=py312h06a4308_0
   - defaults/linux-64::python-json-logger==3.2.1=py312h06a4308_0
+  - defaults/linux-64::python-lmdb==1.6.2=py312h6a678d5_0
+  - defaults/noarch::python-tzdata==2023.3=pyhd3eb1b0_0
   - defaults/linux-64::pytz==2024.1=py312h06a4308_0
   - defaults/linux-64::pyyaml==6.0.2=py312h5eee18b_0
   - defaults/linux-64::pyzmq==26.2.0=py312h6a678d5_0
@@ -98,84 +227,165 @@ dependencies:
   - defaults/linux-64::setuptools==75.1.0=py312h06a4308_0
   - defaults/noarch::six==1.16.0=pyhd3eb1b0_1
   - defaults/linux-64::sniffio==1.3.0=py312h06a4308_0
+  - defaults/noarch::sortedcontainers==2.4.0=pyhd3eb1b0_0
   - defaults/linux-64::soupsieve==2.5=py312h06a4308_0
+  - defaults/noarch::tblib==1.7.0=pyhd3eb1b0_0
+  - defaults/linux-64::tenacity==9.0.0=py312h06a4308_0
+  - defaults/linux-64::toolz==1.0.0=py312h06a4308_0
   - defaults/linux-64::tornado==6.4.2=py312h5eee18b_0
   - defaults/linux-64::traitlets==5.14.3=py312h06a4308_0
   - defaults/linux-64::typing_extensions==4.12.2=py312h06a4308_0
+  - defaults/linux-64::unicodedata2==15.1.0=py312h5eee18b_1
+  - conda-forge/noarch::wayland-protocols==1.37=hd8ed1ab_0
   - defaults/noarch::wcwidth==0.2.5=pyhd3eb1b0_0
   - defaults/linux-64::webencodings==0.5.1=py312h06a4308_2
   - defaults/linux-64::websocket-client==1.8.0=py312h06a4308_0
   - defaults/linux-64::wheel==0.44.0=py312h06a4308_0
   - defaults/linux-64::widgetsnbextension==4.0.13=py312h06a4308_0
+  - conda-forge/linux-64::xcb-util-image==0.4.0=hb711507_2
+  - conda-forge/linux-64::xkeyboard-config==2.43=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxext==1.3.6=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxfixes==6.0.1=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxrender==0.9.12=hb9d3cd8_0
+  - defaults/linux-64::zipp==3.21.0=py312h06a4308_0
+  - defaults/noarch::aiosignal==1.2.0=pyhd3eb1b0_0
   - defaults/linux-64::anyio==4.6.2=py312h06a4308_0
   - defaults/noarch::asttokens==2.0.5=pyhd3eb1b0_0
-  - defaults/linux-64::babel==2.11.0=py312h06a4308_0
   - defaults/linux-64::beautifulsoup4==4.12.3=py312h06a4308_0
   - defaults/linux-64::bleach==6.2.0=py312h06a4308_0
+  - conda-forge/linux-64::cairo==1.18.2=h3394656_1
   - defaults/linux-64::cffi==1.17.1=py312h1fdaa30_1
   - defaults/linux-64::comm==0.2.1=py312h06a4308_0
-  - defaults/linux-64::dbus==1.13.18=hb2f20db_0
-  - defaults/linux-64::gstreamer==1.14.1=h5eee18b_1
+  - defaults/linux-64::cuda-libraries==12.4.1=h06a4308_1
+  - defaults/linux-64::fonttools==4.55.3=py312h5eee18b_0
+  - conda-forge/linux-64::glib==2.82.2=h07242d1_1
+  - defaults/linux-64::gobject-introspection==1.78.1=py312h42194e9_1
   - defaults/linux-64::httpcore==1.0.2=py312h06a4308_0
+  - defaults/linux-64::importlib-metadata==8.5.0=py312h06a4308_0
   - defaults/linux-64::jedi==0.19.2=py312h06a4308_0
   - defaults/linux-64::jinja2==3.1.4=py312h06a4308_1
+  - defaults/linux-64::jsonpatch==1.33=py312h06a4308_1
+  - defaults/linux-64::jsonpath-ng==1.7.0=py312h06a4308_0
   - defaults/linux-64::jupyter_core==5.7.2=py312h06a4308_0
   - defaults/noarch::jupyterlab_pygments==0.1.2=py_0
-  - defaults/linux-64::libpq==17.2=hdbd6064_0
+  - conda-forge/linux-64::libclang-cpp19.1==19.1.7=default_hb5137d0_0
+  - conda-forge/linux-64::libclang13==19.1.7=default_h9c6a7e4_0
+  - conda-forge/linux-64::libfaiss==1.9.0=h72e5a87_0_cpu
+  - conda-forge/linux-64::libflac==1.4.3=h59595ed_0
+  - conda-forge/linux-64::libgl==1.7.0=ha4b6fd6_2
+  - conda-forge/linux-64::libpq==17.2=h3b95a9b_1
+  - conda-forge/linux-64::libxkbcommon==1.7.0=h2c5496b_1
+  - defaults/linux-64::marshmallow==3.19.0=py312h06a4308_0
   - defaults/linux-64::matplotlib-inline==0.1.6=py312h06a4308_0
+  - conda-forge/linux-64::numpy==1.26.4=py312heda63a1_0
+  - defaults/linux-64::partd==1.4.2=py312h06a4308_0
   - defaults/noarch::pexpect==4.8.0=pyhd3eb1b0_3
+  - conda-forge/linux-64::pillow==11.1.0=py312h80c1187_0
   - defaults/linux-64::pip==24.2=py312h06a4308_0
   - defaults/linux-64::prompt-toolkit==3.0.43=py312h06a4308_0
   - defaults/linux-64::python-dateutil==2.9.0post0=py312h06a4308_2
+  - defaults/linux-64::python-dotenv==0.21.0=py312h06a4308_0
   - defaults/linux-64::qtpy==2.4.1=py312h06a4308_0
   - defaults/linux-64::referencing==0.30.2=py312h06a4308_0
   - defaults/linux-64::rfc3339-validator==0.1.4=py312h06a4308_0
   - defaults/linux-64::sip==6.7.12=py312h6a678d5_1
+  - defaults/linux-64::sympy==1.13.3=py312h06a4308_0
   - defaults/linux-64::terminado==0.17.1=py312h06a4308_0
   - defaults/linux-64::tinycss2==1.2.1=py312h06a4308_0
+  - conda-forge/noarch::tqdm==4.67.1=pyhd8ed1ab_1
   - defaults/linux-64::typing-extensions==4.12.2=py312h06a4308_0
-  - defaults/linux-64::urllib3==2.2.3=py312h06a4308_0
+  - defaults/linux-64::typing_inspect==0.9.0=py312h06a4308_0
+  - defaults/linux-64::urllib3==2.3.0=py312h06a4308_0
+  - conda-forge/linux-64::xcb-util-cursor==0.1.5=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxcomposite==0.4.6=hb9d3cd8_2
+  - conda-forge/linux-64::xorg-libxcursor==1.2.3=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxdamage==1.1.6=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxi==1.8.2=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxrandr==1.5.4=hb9d3cd8_0
+  - conda-forge/linux-64::xorg-libxxf86vm==1.1.6=hb9d3cd8_0
+  - defaults/linux-64::yarl==1.18.0=py312h5eee18b_0
+  - defaults/linux-64::zict==3.0.0=py312h06a4308_0
+  - defaults/linux-64::aiohttp==3.11.10=py312h5eee18b_0
   - defaults/linux-64::argon2-cffi-bindings==21.2.0=py312h5eee18b_1
-  - defaults/linux-64::gst-plugins-base==1.14.1=h6a678d5_1
+  - defaults/linux-64::atk-1.0==2.36.0=ha1a6a79_0
+  - defaults/linux-64::contourpy==1.3.1=py312hdb19cb5_0
+  - defaults/noarch::cuda-runtime==12.4.1=hb982923_0
+  - defaults/linux-64::dask-core==2024.12.1=py312h06a4308_0
+  - defaults/linux-64::dataclasses-json==0.6.5=py312h06a4308_0
+  - defaults/linux-64::dbus==1.13.18=hb2f20db_0
+  - conda-forge/linux-64::faiss==1.9.0=py312hf23773a_0_cpu
+  - conda-forge/linux-64::gstreamer==1.24.7=hf3bb09a_0
+  - defaults/linux-64::gts==0.7.6=hb67d8dd_3
+  - conda-forge/linux-64::harfbuzz==10.2.0=h4bba637_0
   - defaults/linux-64::httpx==0.27.0=py312h06a4308_0
+  - conda-forge/noarch::imageio==2.36.1=pyh12aca89_1
+  - defaults/linux-64::jax-jumpy==1.0.0=py312h06a4308_0
   - defaults/linux-64::jsonschema-specifications==2023.7.1=py312h06a4308_0
-  - defaults/linux-64::jupyter_client==8.6.0=py312h06a4308_0
+  - defaults/linux-64::jupyter_client==8.6.3=py312h06a4308_0
   - defaults/linux-64::jupyter_server_terminals==0.4.4=py312h06a4308_1
+  - conda-forge/linux-64::libsndfile==1.2.2=hc60ed4a_1
+  - conda-forge/linux-64::libva==2.22.0=h8a09558_1
+  - conda-forge/linux-64::pandas==2.2.3=py312hf9745cd_1
+  - defaults/linux-64::patsy==0.5.6=py312h06a4308_0
   - defaults/noarch::prompt_toolkit==3.0.43=hd3eb1b0_0
+  - defaults/linux-64::pydantic-core==2.27.1=py312h4aa5aa6_0
   - defaults/linux-64::requests==2.32.3=py312h06a4308_1
+  - conda-forge/linux-64::scipy==1.15.1=py312h180e4f1_0
+  - defaults/linux-64::sqlalchemy==2.0.37=py312h00e1ef3_0
   - defaults/noarch::stack_data==0.2.0=pyhd3eb1b0_0
+  - conda-forge/linux-64::xorg-libxtst==1.2.5=hb9d3cd8_3
   - defaults/noarch::argon2-cffi==21.3.0=pyhd3eb1b0_0
+  - defaults/linux-64::distributed==2024.12.1=py312h06a4308_0
+  - conda-forge/linux-64::faiss-cpu==1.9.0=h718b53a_0
+  - conda-forge/linux-64::ffmpeg==4.4.2=gpl_hdf48244_113
+  - conda-forge/linux-64::gst-plugins-base==1.24.7=h0a52356_0
+  - conda-forge/linux-64::gymnasium==1.0.0=py312h9cebb41_1
+  - defaults/linux-64::httpx-sse==0.4.0=py312h06a4308_0
   - defaults/linux-64::ipython==8.30.0=py312h06a4308_0
   - defaults/linux-64::jsonschema==4.23.0=py312h06a4308_0
-  - defaults/linux-64::qt-main==5.15.2=hb6262e9_11
-  - defaults/linux-64::ipykernel==6.29.5=py312h06a4308_0
+  - defaults/linux-64::matplotlib-base==3.10.0=py312hbfdbfaf_0
+  - conda-forge/linux-64::pango==1.56.1=h861ebed_0
+  - conda-forge/linux-64::pulseaudio-client==17.0=hb77b528_0
+  - defaults/linux-64::pydantic==2.10.3=py312h06a4308_0
+  - pytorch/linux-64::pytorch-cuda==12.4=hc786d27_7
+  - conda-forge/linux-64::qt6-main==6.8.1=h588cce1_2
+  - defaults/linux-64::requests-toolbelt==1.0.0=py312h06a4308_0
+  - defaults/linux-64::statsmodels==0.14.4=py312h5eee18b_0
+  - defaults/linux-64::gtk2==2.24.33=h73c1081_2
+  - defaults/linux-64::ipykernel==6.29.5=py312h06a4308_1
   - defaults/linux-64::ipywidgets==8.1.5=py312h06a4308_0
   - defaults/linux-64::jupyter_events==0.10.0=py312h06a4308_0
+  - defaults/linux-64::langsmith==0.1.147=py312h06a4308_0
+  - conda-forge/linux-64::librsvg==2.58.4=h49af25d_2
   - defaults/linux-64::nbformat==5.10.4=py312h06a4308_0
-  - defaults/linux-64::pyqt==5.15.10=py312h6a678d5_0
+  - defaults/linux-64::pydantic-settings==2.6.1=py312h06a4308_0
+  - conda-forge/linux-64::pyside6==6.8.1=py312h91f0f75_0
+  - conda-forge/linux-64::qt-main==5.15.15=hc3cb62f_2
+  - conda-forge/noarch::seaborn-base==0.13.2=pyhd8ed1ab_3
+  - conda-forge/linux-64::graphviz==12.0.0=hba01fac_0
   - defaults/linux-64::jupyter_console==6.6.3=py312h06a4308_1
+  - defaults/linux-64::langchain-core==0.3.25=py312h06a4308_0
+  - conda-forge/linux-64::matplotlib==3.10.0=py312h7900ff3_0
   - defaults/linux-64::nbclient==0.8.0=py312h06a4308_0
-  - defaults/linux-64::qtconsole==5.6.0=py312h06a4308_0
+  - defaults/linux-64::pyqt==5.15.10=py312h6a678d5_1
+  - conda-forge/noarch::seaborn==0.13.2=hd8ed1ab_3
+  - defaults/linux-64::langchain-text-splitters==0.3.3=py312h06a4308_0
   - defaults/linux-64::nbconvert==7.16.4=py312h06a4308_0
+  - defaults/linux-64::qtconsole==5.6.1=py312h06a4308_0
   - defaults/linux-64::jupyter_server==2.14.1=py312h06a4308_0
+  - defaults/linux-64::langchain==0.3.12=py312h06a4308_0
   - defaults/linux-64::jupyter-lsp==2.2.0=py312h06a4308_0
   - defaults/linux-64::jupyterlab_server==2.27.3=py312h06a4308_0
+  - defaults/linux-64::langchain-community==0.3.12=py312h06a4308_0
   - defaults/linux-64::notebook-shim==0.2.3=py312h06a4308_0
-  - defaults/linux-64::jupyterlab==4.2.5=py312h06a4308_0
-  - defaults/linux-64::notebook==7.2.2=py312h06a4308_1
-  - defaults/linux-64::jupyter==1.0.0=py312h06a4308_9
-  - python==3.12.8
-  - conda-forge::pandoc
-  - conda-forge::graphviz
-  - conda-forge::imageio
-  - conda-forge::numpy
-  - conda-forge::gymnasium
-  - conda-forge::matplotlib
-  - pytorch::pytorch
-  - pytorch::pytorch-cuda=12.4
-  - pytorch::torchaudio
-  - pytorch::torchvision
-  - conda-forge::seaborn
-  - conda-forge::stable-baselines3
-  - conda-forge::tqdm
+  - conda-forge/noarch::jupyter-ai-magics==2.29.0=pyhd8ed1ab_0
+  - defaults/linux-64::jupyterlab==4.3.4=py312h06a4308_0
+  - conda-forge/noarch::jupyter-ai==2.29.0=pyhd8ed1ab_0
+  - conda-forge/noarch::notebook==7.3.2=pyhd8ed1ab_0
+  - defaults/linux-64::jupyter==1.1.1=py312h06a4308_0
+  - conda-forge/noarch::stable-baselines3==2.4.1=pyhd8ed1ab_0
+  - pytorch/linux-64::pytorch==2.5.1=py3.12_cuda12.4_cudnn9.1.0_0
+  - pytorch/linux-64::torchaudio==2.5.1=py312_cu124
+  - pytorch/linux-64::torchtriton==3.1.0=py312
+  - pytorch/linux-64::torchvision==0.20.1=py312_cu124
 prefix: /home/fitti/.conda/envs/journey
