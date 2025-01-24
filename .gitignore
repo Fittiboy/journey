@@ -2,3 +2,5 @@ __pycache__
 .ipynb_checkpoints
 jupyter-ai-logs
 misc/*.pdf
+RLbook2020.pdf
+steps.pdf
