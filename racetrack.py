@@ -4,8 +4,6 @@ import seaborn as sns
 import imageio
 import os
 
-from IPython.display import Image
-
 # 0 = Boundary
 # 1 = Track
 # 2 = Start
@@ -137,43 +135,55 @@ def clamp(val, lower, upper):
     return max(lower, min(upper, val))
 
 
-def direction(val):
-    if val == 0:
-        return 0
-    return val / abs(val)
-
-
 class RaceTrack:
     def __init__(self, track):
         self.track = track
         self.max_speed = 5
+        vels = 2 * self.max_speed + 1
+        self.vel_shift = vels // 2
         self.state_space = (
             # x position
             self.track.shape[0],
             # y position
             self.track.shape[1],
             # x speed
-            2 * self.max_speed + 1,
+            vels,
             # y speed
-            2 * self.max_speed + 1,
+            vels,
         )
         self.action_space = (3, 3)
+        self.num_states = np.prod(self.state_space)
+        self.num_actions = np.prod(self.action_space)
         self.reset()
+        self.test = False
+
+    def s_index(self, state):
+        x, y, x_vel, y_vel = state
+        x_vel += self.vel_shift
+        y_vel += self.vel_shift
+        return np.ravel_multi_index((x, y, x_vel, y_vel), self.state_space)
 
     def reset(self):
         start_xs, start_ys = np.where(self.track == 2)
         i = np.random.choice(range(len(start_ys)))
         # (x, y, x_vel, y_vel)
         self.state = (start_xs[i], start_ys[i], 0, 0)
-        return self.state
+        return self.s_index(self.state)
 
     def clamp_speed(self, speed):
         return clamp(speed, -self.max_speed, self.max_speed)
 
-    def step(self, action, test=False):
+    def set_train(self):
+        self.test = False
+
+    def set_test(self):
+        self.test = True
+
+    def step(self, action_index):
         x, y, x_vel_old, y_vel_old = self.state
-        x_vel = self.clamp_speed(x_vel_old + direction(action[0]))
-        y_vel = self.clamp_speed(y_vel_old + direction(action[1]))
+        dx, dy = index_to_action(action_index)
+        x_vel = self.clamp_speed(x_vel_old + dx)
+        y_vel = self.clamp_speed(y_vel_old + dy)
 
         # Reset speed in one direction if both are zero
         if x_vel == 0 and y_vel == 0:
@@ -184,7 +194,7 @@ class RaceTrack:
 
         # During training, inject some noise by ignoring actions
         # sometimes
-        if not test and np.random.random() < 0.1:
+        if not self.test and np.random.random() < 0.1:
             x_vel, y_vel = x_vel_old, y_vel_old
 
         to_go = [x_vel, y_vel]
@@ -205,34 +215,39 @@ class RaceTrack:
 
             x, y = int(x), int(y)
             if x not in range(self.track.shape[0]) or y not in range(self.track.shape[1]):
-                return self.reset(), -2, False
+                self.reset()
+                return self.s_index(self.state), -2, False
             loc = self.track[x,y]
             # Hit a boundary, loss!
             if loc == 0:
-                return self.reset(), -2, False
+                self.reset()
+                return self.s_index(self.state), -2, False
             # Reached the finish line, win!
             elif loc == 3:
                 self.state = (int(x), int(y), int(x_vel), int(y_vel))
-                return self.state, 100, True
+                return self.s_index(self.state), 100, True
 
         self.state = (int(x), int(y), int(x_vel), int(y_vel))
-        return self.state, -1, False
+        return self.s_index(self.state), -1, False
 
-    def render_episode(self, episode):
+    def render_episode(self, episode, name=None):
+        if not name:
+            name = 'episode_heatmap_playground'
         frames = []
-        for state in episode:
+        for index in episode:
+            state = np.unravel_index(index, self.state_space)
             track_state = self.track.copy()
             track_state[state[0], state[1]] = 10
             fig, ax = plt.subplots(figsize=(6, 6))
             sns.heatmap(track_state, ax=ax, cbar=False)
             ax.axis('off')
             # Save the frame as an image
-            plt.savefig('temp_frame.png', bbox_inches='tight', pad_inches=0)
-            frames.append(imageio.v2.imread('temp_frame.png'))
+            plt.savefig(f'temp_frame_{name}.png', bbox_inches='tight', pad_inches=0)
+            frames.append(imageio.v2.imread(f'temp_frame_{name}.png'))
             plt.close()
         
         # Create a GIF from the collected frames
-        imageio.mimsave('episode_heatmap_playground.gif', frames, fps=2, loop=0)
+        imageio.mimsave(f'animations/{name}.gif', frames, fps=2, loop=0)
         
         # Clean up temporary files if needed
-        os.remove('temp_frame.png')
+        os.remove(f'temp_frame_{name}.png')
