@@ -1,18 +1,36 @@
 import numpy as np
 
+from agent_components import LinearSchedule, SigmoidSchedule
 from itertools import count
 from math import inf
 from tqdm.notebook import tqdm
 
 
 class Agent:
-    def __init__(self, epsilon, alpha, discount, state_space, action_space):
-        self.epsilon = epsilon
-        self.alpha = alpha
+    def __init__(self,
+                 epsilon,
+                 alpha,
+                 discount,
+                 num_states,
+                 num_actions,
+                 eps_schedule=None,
+                 alp_schedule=None,
+                ):
+        self.orig_epsilon = epsilon
+        self.orig_alpha = alpha
+        if eps_schedule:
+            self.eps_schedule = eps_schedule
+        else:
+            self.eps_schedule = LinearSchedule(epsilon, epsilon)
+        if alp_schedule:
+            self.alp_schedule = alp_schedule
+        else:
+            self.alp_schedule = LinearSchedule(alpha, alpha)
+        self.update_params(0, 1)
         self.discount = discount
         
-        self.state_space = state_space
-        self.action_space = action_space
+        self.num_states = num_states
+        self.num_actions = num_actions
         self.ep_lengths = []
         self.ep = 0
 
@@ -37,14 +55,25 @@ class Agent:
                 self.ep_lengths.append(t)
                 break
 
+    def update_params(self, ep, num_episodes):
+        self.alpha = self.alp_schedule.value(ep, num_episodes)
+        self.epsilon = self.eps_schedule.value(ep, num_episodes)
+
     def post_ep_adjustments(self, num_episodes):
-        pass
+        self.update_params(self.ep, num_episodes)
             
     def train(self, environment, num_episodes, quiet=False):
-        for ep in tqdm(range(self.ep, num_episodes), disable=quiet):
-            self.ep = ep
-            self.train_episode(environment)
-            self.post_ep_adjustments(num_episodes)
+        try:
+            for ep in tqdm(range(self.ep, num_episodes),
+                           disable=quiet,
+                           desc="Episodes",
+                           initial=self.ep,
+                           total=num_episodes):
+                self.ep = ep
+                self.train_episode(environment)
+                self.post_ep_adjustments(num_episodes)
+        except KeyboardInterrupt:
+            print(f"Training paused after {self.ep} episodes.")
 
     def play_episode(self, environment, greedy=False, max_steps=-1):
         state = environment.reset()
@@ -65,20 +94,50 @@ class Agent:
 
 
 class StateValueAgent(Agent):
-    def __init__(self, epsilon, alpha, discount, state_space, action_space):
-        super().__init__(epsilon, alpha, discount, state_space, action_space)
-        self.V = np.zeros((state_space))
+    def __init__(self,
+                 epsilon,
+                 alpha,
+                 discount,
+                 num_states,
+                 num_actions,
+                 eps_schedule=None,
+                 alp_schedule=None,
+                ):
+        super().__init__(epsilon,
+                         alpha,
+                         discount,
+                         num_states,
+                         num_actions,
+                         eps_schedule,
+                         alp_schedule,
+                        )
+        self.V = np.zeros((num_states))
 
 
 class QValueAgent(Agent):
-    def __init__(self, epsilon, alpha, discount, state_space, action_space):
-        super().__init__(epsilon, alpha, discount, state_space, action_space)
-        self.Q = np.zeros((state_space, action_space))
+    def __init__(self,
+                 epsilon,
+                 alpha,
+                 discount,
+                 num_states,
+                 num_actions,
+                 eps_schedule=None,
+                 alp_schedule=None,
+                ):
+        super().__init__(epsilon,
+                         alpha,
+                         discount,
+                         num_states,
+                         num_actions,
+                         eps_schedule,
+                         alp_schedule,
+                        )
+        self.Q = np.zeros((num_states, num_actions))
 
     def select_action(self, state, greedy=False):
         action = np.argmax(self.Q[state])
         if not greedy and np.random.random() < self.epsilon:
-            action = np.random.randint(0, self.action_space)
+            action = np.random.randint(0, self.num_actions)
         return action
 
 
@@ -95,8 +154,23 @@ class NStepStorage:
 
 
 class NStepSarsa(QValueAgent):
-    def __init__(self, n, epsilon, alpha, discount, state_space, action_space):
-        super().__init__(epsilon, alpha, discount, state_space, action_space)
+    def __init__(self, n,
+                 epsilon,
+                 alpha,
+                 discount,
+                 num_states,
+                 num_actions,
+                 eps_schedule=None,
+                 alp_schedule=None,
+                ):
+        super().__init__(epsilon,
+                         alpha,
+                         discount,
+                         num_states,
+                         num_actions,
+                         eps_schedule,
+                         alp_schedule,
+                        )
         self.n = n
         self.states = NStepStorage(n, dtype=int)
         self.actions = NStepStorage(n, dtype=int)
