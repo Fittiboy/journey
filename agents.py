@@ -7,15 +7,16 @@ from tqdm.notebook import tqdm
 
 
 class Agent:
-    def __init__(self,
-                 epsilon,
-                 alpha,
-                 discount,
-                 num_states,
-                 num_actions,
-                 eps_schedule=None,
-                 alp_schedule=None,
-                ):
+    def __init__(
+        self,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
         self.orig_epsilon = epsilon
         self.orig_alpha = alpha
         if eps_schedule:
@@ -94,44 +95,48 @@ class Agent:
 
 
 class StateValueAgent(Agent):
-    def __init__(self,
-                 epsilon,
-                 alpha,
-                 discount,
-                 num_states,
-                 num_actions,
-                 eps_schedule=None,
-                 alp_schedule=None,
-                ):
-        super().__init__(epsilon,
-                         alpha,
-                         discount,
-                         num_states,
-                         num_actions,
-                         eps_schedule,
-                         alp_schedule,
-                        )
+    def __init__(
+        self,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
         self.V = np.zeros((num_states))
 
 
 class QValueAgent(Agent):
-    def __init__(self,
-                 epsilon,
-                 alpha,
-                 discount,
-                 num_states,
-                 num_actions,
-                 eps_schedule=None,
-                 alp_schedule=None,
-                ):
-        super().__init__(epsilon,
-                         alpha,
-                         discount,
-                         num_states,
-                         num_actions,
-                         eps_schedule,
-                         alp_schedule,
-                        )
+    def __init__(
+        self,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
         self.Q = np.zeros((num_states, num_actions))
 
     def select_action(self, state, greedy=False):
@@ -154,27 +159,44 @@ class NStepStorage:
 
 
 class NStepSarsa(QValueAgent):
-    def __init__(self, n,
-                 epsilon,
-                 alpha,
-                 discount,
-                 num_states,
-                 num_actions,
-                 eps_schedule=None,
-                 alp_schedule=None,
-                ):
-        super().__init__(epsilon,
-                         alpha,
-                         discount,
-                         num_states,
-                         num_actions,
-                         eps_schedule,
-                         alp_schedule,
-                        )
+    def __init__(
+        self,
+        n,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None
+    ):
+        super().__init__(
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
         self.n = n
         self.states = NStepStorage(n, dtype=int)
         self.actions = NStepStorage(n, dtype=int)
         self.rewards = NStepStorage(n, dtype=int)
+
+    def update_target(self, tau):
+        target = 0
+        for k in range(tau, tau + self.n):
+            target += self.discount ** (k - tau) * self.rewards[k+1]
+        return target
+
+    def target_final_term(self, next_state, next_action):
+        return self.discount ** self.n * self.Q[next_state, next_action]
+
+    def update_rule(self, tau, target):
+        self.Q[self.states[tau], self.actions[tau]] += self.alpha * (
+            target - self.Q[self.states[tau], self.actions[tau]]
+        )
 
     def update(self, t, T, state, action, reward, next_state, next_action):
         self.states[t] = state
@@ -184,18 +206,43 @@ class NStepSarsa(QValueAgent):
         tau = t + 1 - self.n
         if tau >= 0:
             if t + 1 < T:
-                target = 0
-                for k in range(tau, tau + self.n):
-                    target += self.discount ** (k - tau) * self.rewards[k+1]
-                target += self.discount ** self.n * self.Q[next_state, next_action]
-                self.Q[self.states[tau], self.actions[tau]] += self.alpha * (
-                    target - self.Q[self.states[tau], self.actions[tau]]
-                )
+                target = self.update_target(tau)
+                target += self.target_final_term(next_state, next_action)
+                self.update_rule(tau, target)
             else:
                 for tau_ in range(tau, T):
-                    target = 0
-                    for k in range(tau_, T):
-                        target += self.discount ** (k - tau_) * self.rewards[k+1]
-                    self.Q[self.states[tau_], self.actions[tau_]] += self.alpha * (
-                        target - self.Q[self.states[tau_], self.actions[tau_]]
-                    )
+                    target = self.update_target(tau_)
+                    self.update_rule(tau_, target)
+
+
+class NStepExpectedSarsa(NStepSarsa):
+    def __init__(
+        self,
+        n,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            n,
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
+        self.n = n
+        self.states = NStepStorage(n, dtype=int)
+        self.actions = NStepStorage(n, dtype=int)
+        self.rewards = NStepStorage(n, dtype=int)
+
+    def target_final_term(self, next_state, next_action):
+        val = np.sum(self.Q[next_state]) * self.epsilon / self.num_actions
+        val += (1 - self.epsilon) * np.max(self.Q[next_state])
+        return self.discount ** self.n * val
