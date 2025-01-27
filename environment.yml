@@ -3,6 +3,9 @@ channels:
   - defaults
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
+  - conda-forge
+  - nvidia
+  - pytorch
 dependencies:
   - conda-forge/linux-64::pandoc==3.6.2=ha770c72_0
   - conda-forge/linux-64::_libgcc_mutex==0.1=conda_forge
