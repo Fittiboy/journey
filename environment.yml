@@ -107,7 +107,6 @@ dependencies:
   - conda-forge/linux-64::openh264==2.3.1=hcb278e6_2
   - conda-forge/linux-64::p11-kit==0.24.1=hc5aa10d_0
   - conda-forge/linux-64::pcre2==10.44=hba22ea6_2
-  - conda-forge/linux-64::python==3.12.8=h9e4cc4f_1_cpython
   - conda-forge/linux-64::qhull==2020.2=h434a139_5
   - conda-forge/linux-64::svt-av1==1.4.1=hcb278e6_0
   - conda-forge/linux-64::wayland==1.23.1=h3e06ad9_0
@@ -391,4 +390,5 @@ dependencies:
   - pytorch/linux-64::torchaudio==2.5.1=py312_cu124
   - pytorch/linux-64::torchtriton==3.1.0=py312
   - pytorch/linux-64::torchvision==0.20.1=py312_cu124
+  - python==3.12.8=h9e4cc4f_1_cpython
 prefix: /home/fitti/.conda/envs/journey
