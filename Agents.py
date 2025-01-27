@@ -63,7 +63,7 @@ class Agent:
     def post_ep_adjustments(self, num_episodes):
         self.update_params(self.ep, num_episodes)
             
-    def train(self, environment, num_episodes, quiet=False):
+    def train(self, environment, num_episodes, quiet=False, early_stop=-1):
         try:
             for ep in tqdm(range(self.ep, num_episodes),
                            disable=quiet,
@@ -71,6 +71,8 @@ class Agent:
                            initial=self.ep,
                            total=num_episodes):
                 self.ep = ep
+                if ep == early_stop:
+                    raise KeyboardInterrupt
                 self.train_episode(environment)
                 self.post_ep_adjustments(num_episodes)
         except KeyboardInterrupt:
@@ -184,9 +186,9 @@ class NStepSarsa(QValueAgent):
         self.actions = NStepStorage(n, dtype=int)
         self.rewards = NStepStorage(n, dtype=int)
 
-    def update_target(self, tau):
+    def update_target(self, tau, limit):
         target = 0
-        for k in range(tau, tau + self.n):
+        for k in range(tau, limit):
             target += self.discount ** (k - tau) * self.rewards[k+1]
         return target
 
@@ -206,12 +208,12 @@ class NStepSarsa(QValueAgent):
         tau = t + 1 - self.n
         if tau >= 0:
             if t + 1 < T:
-                target = self.update_target(tau)
+                target = self.update_target(tau, t + 1)
                 target += self.target_final_term(next_state, next_action)
                 self.update_rule(tau, target)
             else:
                 for tau_ in range(tau, T):
-                    target = self.update_target(tau_)
+                    target = self.update_target(tau_, T)
                     self.update_rule(tau_, target)
 
 
@@ -237,12 +239,59 @@ class NStepExpectedSarsa(NStepSarsa):
             eps_schedule,
             alp_schedule,
         )
-        self.n = n
-        self.states = NStepStorage(n, dtype=int)
-        self.actions = NStepStorage(n, dtype=int)
-        self.rewards = NStepStorage(n, dtype=int)
 
     def target_final_term(self, next_state, next_action):
         val = np.sum(self.Q[next_state]) * self.epsilon / self.num_actions
         val += (1 - self.epsilon) * np.max(self.Q[next_state])
         return self.discount ** self.n * val
+
+
+class NStepTreeBackup(NStepExpectedSarsa):
+    def __init__(
+        self,
+        n,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            n,
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
+
+    def update_target(self, tau, limit):
+        target = 0
+        self._weight = 1
+        for k in range(tau, limit - 1):
+            # Received reward and expectation over unchosen actions
+            exp_ret = np.sum(self.Q[self.states[k+1]]) * self.epsilon / self.num_actions
+            exp_ret += (1 - self.epsilon) * np.max(self.Q[self.states[k+1]])
+            
+            # Weight for the chosen action
+            pi_taken = self.epsilon / self.num_actions
+            if np.argmax(self.Q[self.states[k+1]]) == self.actions[k+1]:
+                pi_taken += 1 - self.epsilon
+            # Remove chosen action's value from the expectation term
+            exp_ret -= pi_taken * self.Q[self.states[k+1], self.actions[k+1]]
+            
+            target += self._weight * (self.rewards[k+1] + self.discount * exp_ret)
+            
+            # Updated weight for the next term
+            self._weight *= self.discount * pi_taken
+        target += self._weight * self.rewards[limit]
+        return target
+
+    def target_final_term(self, next_state, next_action):
+        val = np.sum(self.Q[next_state]) * self.epsilon / self.num_actions
+        val += (1 - self.epsilon) * np.max(self.Q[next_state])
+        return self._weight * self.discount * val
