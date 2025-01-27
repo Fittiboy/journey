@@ -1,6 +1,6 @@
 import numpy as np
 
-from agent_components import LinearSchedule, SigmoidSchedule
+from AgentComponents import LinearSchedule, SigmoidSchedule
 from itertools import count
 from math import inf
 from tqdm.notebook import tqdm
