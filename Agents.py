@@ -148,6 +148,106 @@ class QValueAgent(Agent):
         return action
 
 
+class ExpectedSarsa(QValueAgent):
+    def __init__(
+        self,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
+
+    def update(self, t, T, state, action, reward, next_state, next_action):
+        exp_ret = sum(self.Q[next_state]) * self.epsilon / self.num_actions
+        exp_ret += (1 - self.epsilon) * np.max(self.Q[next_state])
+        target = reward + self.discount * exp_ret
+        self.Q[state, action] += self.alpha * (target - self.Q[state, action])
+
+
+class DynaExpectedSarsa(ExpectedSarsa):
+    def __init__(
+        self,
+        plan_steps,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
+        self.model = dict()
+        self.plan_steps = plan_steps
+        self.rng = np.random.default_rng()
+
+    def update_rule(self, t, T, state, action, reward, next_state, next_action):
+        super().update(t, T, state, action, reward, next_state, next_action)
+
+    def update(self, t, T, state, action, reward, next_state, next_action):
+        # Update the environment model
+        self.model[(state, action)] = (reward, next_state, t)
+        # Perform the direct RL step
+        self.update_rule(t, T, state, action, reward, next_state, next_action)
+        # Perform the planning step, plan_step times
+        for _ in range(self.plan_steps):
+            state, action = self.rng.choice(list(self.model))
+            reward, next_state, timestamp = self.model[(state, action)]
+            next_action = self.select_action(state)
+            self.update_rule(t, T, state, action, reward, next_state, next_action)
+
+
+class DynaQ(DynaExpectedSarsa):
+    def __init__(
+        self,
+        plan_steps,
+        epsilon,
+        alpha,
+        discount,
+        num_states,
+        num_actions,
+        eps_schedule=None,
+        alp_schedule=None,
+    ):
+        super().__init__(
+            plan_steps,
+            epsilon,
+            alpha,
+            discount,
+            num_states,
+            num_actions,
+            eps_schedule,
+            alp_schedule,
+        )
+        self.model = dict()
+        self.plan_steps = plan_steps
+        self.rng = np.random.default_rng()
+
+    def update_rule(self, t, T, state, action, reward, next_state, next_action):
+        target = reward + self.discount * np.max(self.Q[next_state])
+        self.Q[state, action] += self.alpha * (target - self.Q[state, action])
+
+    
 class NStepStorage:
     def __init__(self, n, dtype=float):
         self.data = np.zeros(n + 1, dtype=dtype)
