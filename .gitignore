@@ -4,3 +4,4 @@ jupyter-ai-logs
 misc/*.pdf
 RLbook2020.pdf
 steps.pdf
+*.pth
