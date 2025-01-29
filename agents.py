@@ -1,319 +1,299 @@
 import numpy as np
-from dataclasses import dataclass
-from typing import Callable, Dict
-from itertools import count
-from math import inf
-from tqdm.notebook import tqdm
 
-########################################
-# Schedules for parameter updates
-########################################
+from math import inf
+from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from itertools import count
+
+from tqdm.auto import tqdm
+
+################################
+# Abstract Agent components
+################################
+
+class ActionSelector(ABC):
+    """Agent component that selects an action for the current state s."""
+    
+    @abstractmethod
+    def __call__(self, agent: 'Agent', s: int) -> int:
+        """
+        Return an action to take, conditional on the current
+        observation.
+        """
+        pass
+
+
+class UpdateMethod(ABC):
+    """
+    Component to update the agent's internal state.
+
+    Examples include learning value estimates, updating the
+    value estimator's parameters, or planning with a model.
+    """
+
+    @abstractmethod
+    def __call__(
+        self,
+        agent: 'Agent',
+        s: int, a: int, r: float, s_: int, a_: int,
+        t: int, T: int,
+        ep: int, num_eps: int,
+    ):
+        """Update some of the agent's internal state."""
+        pass
+
+################################
+# Action selectors
+################################
+
+class Greedy(ActionSelector):
+    """The greedy action selector."""
+
+    def __call__(self, agent: 'Agent', s: int) -> int:
+        return np.argmax(agent.Q[s])
+
 
 @dataclass
-class Schedule:
-    initial: float
-    final: float
-    weight: Callable[[int, int], float]
+class EpsilonGreedy(ActionSelector):
+    """The epsilon-greedy action selector."""
+    eps: float
+    rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
 
+    def __call__(self, agent: 'Agent', s: int) -> int:
+        if self.rng.random() < self.eps:
+            return self.rng.integers(0, agent.num_actions)
+        return np.argmax(agent.Q[s])
 
-def linear_schedule(initial: float, final: float) -> Schedule:
-    """Create a linear parameter schedule"""
-    def linear_weight(progress: float) -> float:
-        return progress
-    return Schedule(initial, final, linear_weight)
+################################
+# Value update methods
+################################
 
+@dataclass
+class QLearning(UpdateMethod):
+    """Default Q-learning update method"""
+    alpha: float
+    gamma: float = field(default=1.0)
 
-def sigmoid_schedule(initial: float, final: float) -> Schedule:
-    """Create a sigmoid parameter schedule"""
-    def sigmoid_weight(progress: float) -> float:
-        def sigmoid(x):
-            return 1 / (1 + np.exp(-x))
-            
-        return (sigmoid(6 * progress) - 1) / (np.exp(6) - 1)
-    return Schedule(initial, final, sigmoid_weight)
-
-
-def up_down_schedule(initial: float, final: float) -> Schedule:
-    """
-    Create a schedule that rises to final,
-    then drops back to initial.
-    """
-    def up_down_weight(progress: float) -> float:
-        return (- (progress - 0.5) ** 2) * 4 + 1
-    return Schedule(initial, final, up_down_weight)
-
-########################################
-# AgentState: Holds hyperparameters, Q/V tables, schedules, etc.
-########################################
-
-class AgentState:
-    def __init__(
+    def __call__(
         self,
-        num_states,
-        num_actions,
-        gamma=1.0,
-        alpha=0.1,
-        epsilon=0.1,
-        schedules=Dict[str, Schedule],
-        plan_steps=0,
-        n_steps=1,
-        use_value=False,  # If you want to store and learn V instead of Q.
+        agent: 'Agent',
+        s: int, a: int, r: float, s_: int, a_: int,
+        t: int, T: int,
+        ep: int, num_eps: int,
     ):
-        """Hold all agent parameters, learned values, and ephemeral data structures."""
-        assert not (n_steps > 1 and plan_steps > 0) # Cannot currently handle both
-        
-        self.num_states = num_states
-        self.num_actions = num_actions
-
-        # Hyperparameters
-        self.gamma = gamma
-        self.alpha_init = alpha
-        self.epsilon_init = epsilon
-
-        # Schedules
-        self.schedules = schedules
-
-        # After each episode, we can call update_params to refresh alpha and epsilon
-        self.alpha = alpha
-        self.epsilon = epsilon
-        self.episode_count = 0  # track which episode we are on
-
-        # Q or V
-        self.use_value = use_value
-        if use_value:
-            self.V = np.zeros(num_states)
-            self.Q = None
+        if T > t + 1:
+            target = r + self.gamma * np.max(agent.Q[s_]) - agent.Q[s, a]
         else:
-            self.Q = np.zeros((num_states, num_actions))
-            self.V = None
+            target = r - agent.Q[s, a]
+        agent.Q[s, a] += self.alpha * target
 
-        # Dyna related
-        self.plan_steps = plan_steps
-        self.model = dict()  # For storing transitions (s, a) -> (r, s')
-        self.rng = np.random.default_rng()
+################################
+# Parameter schedules
+################################
 
-        # N-step related
-        self.n_steps = n_steps
-        self.n_states = None  # will be allocated at start of episode
-        self.n_actions = None
-        self.n_rewards = None
+@dataclass
+class Schedule(UpdateMethod):
+    """Schedule for updating an agent's parameter"""
+    param_path: list[str]
+    # The weight function should start at f(0)=0 and stay within [0, 1]
+    weight_fn: Callable[[float], float]
+    initial: float = field(default=None)
+    final: float = field(default=None)
 
-########################################
-# Update agent parameters (schedules)
-########################################
+    def __post_init__(self):
+        assert len(self.param_path) > 0
+        x = np.linspace(0, 1)
+        assert (
+            np.all(0 <= self.weight_fn(x))
+            and np.all(self.weight_fn(x) <= 1.0)
+        )
 
-def update_params(agent_state: AgentState, total_episodes: int):
-    ep = agent_state.episode_count
-    for param, schedule in agent_state.schedules.items():
-        weight = schedule.weight(min(1, ep / total_episodes))
-        new_value = (1 - weight) * schedule.initial + weight * schedule.final
-        agent_state.__dict__[param] = new_value
+    def __call__(
+        self,
+        agent: 'Agent',
+        s: int, a: int, r: float, s_: int, a_: int,
+        t: int, T: int,
+        ep: int, num_eps: int,
+    ):
+        """Update the agent's parameter, according to the weight function"""
+        progress = min(ep / num_eps, 1)
+        weight = self.weight_fn(progress)
+        value = (1 - weight) * self.initial + weight * self.final
 
-########################################
-# Action selection
-########################################
-
-def select_action(agent_state: AgentState, obs, greedy=False):
-    if agent_state.use_value:
-        raise NotImplementedError
-    # For Q-based
-    if greedy:
-        return np.argmax(agent_state.Q[obs])
-    if np.random.rand() < agent_state.epsilon:
-        return np.random.randint(agent_state.num_actions)
-    else:
-        return np.argmax(agent_state.Q[obs])
-
-########################################
-# Single-step update methods
-########################################
-
-def q_learning_update(agent_state: AgentState, _t, _T, s, a, r, s_next, _a_next=None):
-    Q = agent_state.Q
-    alpha = agent_state.alpha
-    gamma = agent_state.gamma
-
-    td_target = r + gamma * np.max(Q[s_next])
-    Q[s, a] += alpha * (td_target - Q[s, a])
+        # Get the parameter from the agent.
+        # The parameter may be nested, for example:
+        # ["selector", "epsilon"], which corresponds to
+        # agent.selector.epsilon
+        current = agent
+        for part in self.param_path[:-1]:
+            current = getattr(current, part)
+        setattr(current, self.param_path[-1], value)
 
 
-def sarsa_update_fn(expected=False):
-    def sarsa_update(agent_state: AgentState, _t, _T, s, a, r, s_next, a_next=None):
-        assert expected or a_next is not None
-        Q = agent_state.Q
-        alpha = agent_state.alpha
-        gamma = agent_state.gamma
-        eps = agent_state.epsilon
+def linear_schedule(param_path: list[str], initial: float, final: float):
+    """Create a linear parameter schedule"""
+    def linear_weight(progress):
+        return progress
     
-        if expected:
-            # Expected value under epsilon-greedy
-            policy_probs = np.ones(agent_state.num_actions) * (eps / agent_state.num_actions)
-            best_a = np.argmax(Q[s_next])
-            policy_probs[best_a] += 1 - eps
-        
-            expected_val = np.sum(Q[s_next] * policy_probs)
-            td_target = r + gamma * expected_val
-        else:
-            td_target = r + gamma * Q[s_next, a_next]
-        Q[s, a] += alpha * (td_target - Q[s, a])
-    return sarsa_update
-
-########################################
-# N-step updates
-########################################
-
-def init_nstep_buffers(agent_state: AgentState):
-    n = agent_state.n_steps
-    agent_state.n_states = np.zeros(n + 1, dtype=int)
-    agent_state.n_actions = np.zeros(n + 1, dtype=int)
-    agent_state.n_rewards = np.zeros(n + 1, dtype=float)
+    return Schedule(
+        param_path=param_path,
+        weight_fn=linear_weight,
+        initial=initial,
+        final=final,
+    )
 
 
-def nstep_sarsa_update_fn(expected=False):
-    def nstep_sarsa_update(agent_state: AgentState, t, T, _s, _a, _r, s_next=None, a_next=None):
-        """Implements the core n-step Sarsa update logic."""
-        n = agent_state.n_steps
-        states = agent_state.n_states
-        actions = agent_state.n_actions
-        rewards = agent_state.n_rewards
-        Q = agent_state.Q
+def sigmoid_schedule(param_path: list[str], initial: float, final: float, scale=6):
+    """Create a sigmoid parameter schedule"""
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
     
-        alpha = agent_state.alpha
-        gamma = agent_state.gamma
-        eps = agent_state.epsilon
+    zero_shift = sigmoid(0)
+    scale_factor = 1 / (sigmoid(scale) + zero_shift)
     
-        first_tau = t + 1 - n  # index of the obs to update
-        if first_tau >= 0:
-            # In case the episode has ended, perform the trailing updates
-            if t + 1 == T:
-                range_limit = T
-            else:
-                range_limit = first_tau + 1
-            for tau in range(first_tau, range_limit):
-                # compute the return
-                G = 0
-                # sum over rewards
-                for k in range(tau + 1, min(tau + n, T) + 1):
-                    G += (gamma ** (k - (tau + 1))) * rewards[k % (n+1)]
-                # if not terminal, add bootstrap
-                if tau + n < T:
-                    if expected:
-                        # Expected value under epsilon-greedy
-                        policy_probs = np.ones(agent_state.num_actions) * (eps / agent_state.num_actions)
-                        best_a = np.argmax(Q[s_next])
-                        policy_probs[best_a] += 1 - eps
-                    
-                        expected_val = np.sum(Q[s_next] * policy_probs)
-                        G += (gamma ** n) * expected_val
-                    else:
-                        G += (gamma ** n) * Q[s_next, a_next]
-                # update Q
-                s_tau = states[tau % (n+1)]
-                a_tau = actions[tau % (n+1)]
-                Q[s_tau, a_tau] += alpha * (G - Q[s_tau, a_tau])
-    return nstep_sarsa_update
+    def sigmoid_weight(progress):
+        return (sigmoid(scale * progress) + zero_shift) * scale_factor
+    
+    return Schedule(
+        param_path=param_path,
+        weight_fn=sigmoid_weight,
+        initial=initial,
+        final=final,
+    )
 
-########################################
-# Dyna: planning
-########################################
 
-def dyna_plan(agent_state: AgentState, t, T, update_fn):
-    (s, a) = agent_state.rng.choice(list(agent_state.model.keys()))
-    (r, s_next) = agent_state.model[(s, a)]
-    update_fn(agent_state, t, T, s, a, r, s_next, None)
+def updown_schedule(param_path: list[str], initial: float, final: float):
+    """Create a linear parameter schedule"""
+    def updown_weight(progress: float) -> float:
+        return (- (progress - 0.5) ** 2) * 4 + 1
+    
+    return Schedule(
+        param_path=param_path,
+        weight_fn=updown_weight,
+        initial=initial,
+        final=final,
+    )
 
-########################################
-# Main loop: train & train_episode
-########################################
+################################
+# Planners
+################################
 
-def train(
-    agent_state: AgentState,
-    environment,
-    num_episodes=1000,
-    update_fn=q_learning_update,  # or "expected_sarsa", "dyna_q", "dyna_expected", "nstep_sarsa", etc.
-    quiet=False,
-    early_stop=-1,
-):
-    """Trains the agent for num_episodes, returning a list of episode lengths."""
-    episode_lengths = []
+class NoPlanner(UpdateMethod):
+    """Does nothing"""
+    def __call__(
+        self,
+        agent: 'Agent',
+        s: int, a: int, r: float, s_: int, a_: int,
+        t: int, T: int,
+        ep: int, num_eps: int,
+    ):
+        """Update some of the agent's internal state."""
+        pass
 
-    try:
-        for ep in tqdm(
-            range(agent_state.episode_count, num_episodes),
-            disable=quiet,
+################################
+# Agent
+################################
+
+@dataclass
+class Agent:
+    """
+    An RL agent that is to be trained in a specific environment,
+    holding value estimates, an action selection strategy, update
+    rules, and, optionally a planning strategy and hyperparameter
+    update schedules.
+    """
+    num_states: int
+    num_actions: int
+    Q: np.ndarray = field(init=False)
+    selector: ActionSelector
+    learner: UpdateMethod
+    schedules: list[UpdateMethod] = field(default_factory = list)
+    planner: UpdateMethod = field(default_factory = NoPlanner)
+    ep_lengths: list[int] = field(default_factory = list, init=False)
+    ep_returns: list[int] = field(default_factory = list, init=False)
+
+    def __post_init__(self):
+        self.Q = np.zeros((self.num_states, self.num_actions))
+
+################################
+# Training loop
+################################
+
+class TrainingInterrupt(Exception):
+    pass
+
+
+@dataclass
+class Trainer:
+    """
+    A class that trains a given agent in a given environment,
+    while keeping track of the progress along the way.
+    """
+    agent: Agent
+    env: object
+    episodes: int = field(default=0, init=False)
+
+    def train(self, num_episodes, quiet=False, early_stop=-1):
+        # Iterator that keeps track of progress even when training
+        # loop is interrupted.
+        train_iter = tqdm(
+            range(self.episodes, num_episodes),
             desc="Episodes",
-            initial=agent_state.episode_count,
+            initial=self.episodes,
             total=num_episodes,
-        ):
-            if ep == early_stop:
-                break
-            agent_state.episode_count = ep
-            update_params(agent_state, num_episodes)
+            disable=quiet,
+        )
+        env = self.env
+        agent = self.agent
+        try:
+            for ep in train_iter:
+                self.episodes = ep
+                # Interrupt the training process if our early stopping
+                # point was reached
+                if ep == early_stop:
+                    raise TrainingInterrupt
+                
+                # Initialize the beginning of the episodes
+                s = env.reset()
+                a = agent.selector(agent, s)
+                # The terminal time step, used for some update methods
+                T = inf
+
+                # Keep track of the episode's return
+                ret = 0
+                
+                for t in count():
+                    
+                    # Take a step in the environment and record the reward
+                    s_, r, done = env.step(a)
+                    ret += r
     
-            length = train_episode(agent_state, environment, update_fn)
-            episode_lengths.append(length)
-    except KeyboardInterrupt:
-        print(f"Training paused after {ep} episodes!")
+                    # Select a next action to take, unless the episode
+                    # has finished, in which case set the terminal time
+                    # step to its true value.
+                    if done:
+                        T = t + 1
+                    else:
+                        a_ = agent.selector(agent, s_)
     
-    return episode_lengths
+                    # Update the agent's value estimates through direct LR
+                    agent.learner(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
 
+                    # Apply the agent's parameter update schedules
+                    for schedule in agent.schedules:
+                        schedule(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
 
-def train_episode(agent_state: AgentState, environment, update_fn):
-    s = environment.reset()
-    a = select_action(agent_state, s)
-
-    if agent_state.n_steps > 1:
-        init_nstep_buffers(agent_state)
-    T = inf
-
-    for t in count():
-        s_next, r, done = environment.step(a)
-        if agent_state.n_steps > 1:
-            idx = t % (agent_state.n_steps + 1)
-            agent_state.n_states[idx] = s
-            agent_state.n_actions[idx] = a
-            agent_state.n_rewards[idx] = r
-
-        if done:
-            T = t + 1
-        else:
-            a_next = select_action(agent_state, s_next)
-
-        # Single-step or multi-step updates
-        update_fn(agent_state, t, T, s, a, r, s_next, a_next)
-        if agent_state.plan_steps > 0:
-            agent_state.model[(s, a)] = (r, s_next)
-            for _ in range(agent_state.plan_steps):
-                dyna_plan(agent_state, t, T, update_fn)
-
-        if done:
-            break
-        s, a = s_next, a_next
-    return t
-
-########################################
-# Policy Execution (play episode greedily)
-########################################
-
-def play_episode(agent_state: AgentState, environment, max_steps=-1):
-    s = environment.reset()
-    a = select_action(agent_state, s, greedy=True)
-    states = [s]
-    actions = [a]
-    rewards = [0]
-
-    step_count = 0
-    while True:
-        s_next, r, done = environment.step(a)
-        step_count += 1
-        a_next = select_action(agent_state, s_next, greedy=True)
-        states.append(s_next)
-        actions.append(a_next)
-        rewards.append(r)
-
-        if done or (max_steps > 0 and step_count >= max_steps):
-            break
-
-        s, a = s_next, a_next
-
-    return states, actions, rewards
+                    # Execute the agent's planning strategy
+                    agent.planner(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
+    
+                    if done:
+                        agent.ep_lengths.append(T)
+                        agent.ep_returns.append(ret)
+                        break
+                        
+                    # Update values for the next time step
+                    s, a = s_, a_
+                
+        except (KeyboardInterrupt, TrainingInterrupt):
+            print(f"Training paused after {self.episodes} episodes.")
