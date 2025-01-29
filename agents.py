@@ -382,8 +382,6 @@ class NStepTreeBackup(UpdateMethod):
 class Schedule(UpdateMethod):
     """Schedule for updating an agent's parameter"""
     param_path: list[str]
-    # The weight function should start at f(0)=0 and stay within [0, 1]
-    weight_fn: Callable[[float], float]
     initial: float = field(default=None)
     final: float = field(default=None)
 
@@ -391,9 +389,12 @@ class Schedule(UpdateMethod):
         assert len(self.param_path) > 0
         x = np.linspace(0, 1)
         assert (
-            np.all(0 <= self.weight_fn(x))
-            and np.all(self.weight_fn(x) <= 1.0)
+            np.all(0 <= self.weight(x))
+            and np.all(self.weight(x) <= 1.0)
         )
+
+    def weight(self, progress):
+        raise NotImplementedError
 
     def __call__(
         self,
@@ -404,7 +405,7 @@ class Schedule(UpdateMethod):
     ):
         """Update the agent's parameter, according to the weight function"""
         progress = min(ep / num_eps, 1)
-        weight = self.weight_fn(progress)
+        weight = self.weight(progress)
         value = (1 - weight) * self.initial + weight * self.final
 
         # Get the parameter from the agent.
@@ -420,52 +421,35 @@ class Schedule(UpdateMethod):
             raise ValueError(f"Invalid parameter path: {self.param_path}")
 
 
-def linear_schedule(param_path: list[str], initial: float, final: float):
-    """Create a linear parameter schedule"""
-    def linear_weight(progress):
+class LinearSchedule(Schedule):
+    """A linear parameter schedule"""
+    def weight(self, progress):
         return progress
-    
-    return Schedule(
-        param_path=param_path,
-        weight_fn=linear_weight,
-        initial=initial,
-        final=final,
-    )
 
 
-def sigmoid_schedule(param_path: list[str], initial: float, final: float, scale=6):
-    """Create a sigmoid parameter schedule"""
-    def sigmoid(x):
-        return 1 / (1 + np.exp(-x))
-    
-    zero_shift = sigmoid(0)
-    scale_factor = 1 / (sigmoid(scale) + zero_shift)
-    
-    def sigmoid_weight(progress):
-        return (sigmoid(scale * progress) + zero_shift) * scale_factor
-    
-    return Schedule(
-        param_path=param_path,
-        weight_fn=sigmoid_weight,
-        initial=initial,
-        final=final,
-    )
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
 
-def updown_schedule(param_path: list[str], initial: float, final: float):
+class SigmoidSchedule(Schedule):
+    """A sigmoid parameter schedule"""
+    scale: int = 6
+    
+    def __post_init__(self):
+        self.zero_shift = sigmoid(0)
+        self.scale_factor = 1 / (sigmoid(SigmoidSchedule.scale) + self.zero_shift)
+    
+    def weight(self, progress):
+        return (sigmoid(SigmoidSchedule.scale * progress) + self.zero_shift) * self.scale_factor
+
+
+def UpDownSchedule(Schedule):
     """
-    Create a parameter schedule that reaches final at 0.5, then going back
+    A parameter schedule that reaches final at 0.5, then going back
     down to initial towards the end.
     """
-    def updown_weight(progress: float) -> float:
+    def weight(self, progress: float) -> float:
         return (- (progress - 0.5) ** 2) * 4 + 1
-    
-    return Schedule(
-        param_path=param_path,
-        weight_fn=updown_weight,
-        initial=initial,
-        final=final,
-    )
 
 ################################
 # Planners
