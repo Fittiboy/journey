@@ -125,10 +125,13 @@ class Schedule(UpdateMethod):
         # The parameter may be nested, for example:
         # ["selector", "epsilon"], which corresponds to
         # agent.selector.epsilon
-        current = agent
-        for part in self.param_path[:-1]:
-            current = getattr(current, part)
-        setattr(current, self.param_path[-1], value)
+        try:
+            current = agent
+            for part in self.param_path[:-1]:
+                current = getattr(current, part)
+            setattr(current, self.param_path[-1], value)
+        except AttributeError:
+            raise ValueError(f"Invalid parameter path: {self.param_path}")
 
 
 def linear_schedule(param_path: list[str], initial: float, final: float):
@@ -164,7 +167,10 @@ def sigmoid_schedule(param_path: list[str], initial: float, final: float, scale=
 
 
 def updown_schedule(param_path: list[str], initial: float, final: float):
-    """Create a linear parameter schedule"""
+    """
+    Create a parameter schedule that reaches final at 0.5, then going back
+    down to initial towards the end.
+    """
     def updown_weight(progress: float) -> float:
         return (- (progress - 0.5) ** 2) * 4 + 1
     
@@ -227,7 +233,7 @@ class TrainingInterrupt(Exception):
 @dataclass
 class Trainer:
     """
-    A class that trains a given agent in a given environment,
+    Trains a given agent in a given environment,
     while keeping track of the progress along the way.
     """
     agent: Agent
@@ -235,6 +241,11 @@ class Trainer:
     episodes: int = field(default=0, init=False)
 
     def train(self, num_episodes, quiet=False, early_stop=-1):
+        """
+        Run the training loop for a given number of episodes, while
+        allowing for early stopping and continuing, as well as muting
+        the output, which is useful during parameter studies.
+        """
         # Iterator that keeps track of progress even when training
         # loop is interrupted.
         train_iter = tqdm(
@@ -250,8 +261,9 @@ class Trainer:
             for ep in train_iter:
                 self.episodes = ep
                 # Interrupt the training process if our early stopping
-                # point was reached
-                if ep == early_stop:
+                # point was reached. Ensure that training is only
+                # continued if the early stopping point is removed.
+                if early_stop != -1 and ep == early_stop:
                     raise TrainingInterrupt
                 
                 # Initialize the beginning of the episodes
@@ -262,12 +274,14 @@ class Trainer:
 
                 # Keep track of the episode's return
                 ret = 0
+                discount = 1
                 
                 for t in count():
                     
                     # Take a step in the environment and record the reward
-                    s_, r, done = env.step(a)
-                    ret += r
+                    s_, r, done, *info = env.step(a)
+                    ret += discount * r
+                    discount *= agent.learner.gamma
     
                     # Select a next action to take, unless the episode
                     # has finished, in which case set the terminal time
@@ -297,3 +311,23 @@ class Trainer:
                 
         except (KeyboardInterrupt, TrainingInterrupt):
             print(f"Training paused after {self.episodes} episodes.")
+
+    def play_episode(self, max_steps=100):
+        env = self.env
+        agent = self.agent
+
+        s = env.reset()
+        a = agent.selector(agent, s)
+        states = [s]
+        actions = [a]
+        rewards = [0]
+        for _ in range(max_steps):
+            s, r, done, *info = env.step(a)
+            a = agent.selector(agent, s)
+            rewards.append(r)
+            states.append(s)
+            actions.append(a)
+            if done:
+                break
+
+        return states, actions, rewards
