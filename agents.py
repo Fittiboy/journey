@@ -100,7 +100,7 @@ class EpsilonGreedyExpBonus(ActionSelector):
     rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
 
     def __call__(self, agent: 'Agent', s: int, t: int) -> int:
-        if self.last_used_a is None:
+        if self.last_used_a is None or t == 0:
             # Initialize array that keeps track of timesteps during
             # which actions were last taken
             self.last_used_a = np.zeros_like(agent.Q)
@@ -114,6 +114,7 @@ class EpsilonGreedyExpBonus(ActionSelector):
             return self.rng.integers(0, agent.num_actions)
 
         a = np.argmax(Q_s)
+        self.last_used_a[s, a] = t
         return a
 
     def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
@@ -532,7 +533,7 @@ class Dyna(UpdateMethod):
         t: int, T: int,
         ep: int, num_eps: int,
     ):
-        if self.plus and self.last_used_a is None:
+        if self.plus and self.last_used_a is None or self.plus and t == 0:
             self.last_used_a = np.zeros_like(agent.Q)
         done = t + 1 == T
         # Update the model naively by storing transition
@@ -555,6 +556,8 @@ class Dyna(UpdateMethod):
                 # chosen
                 tau = t - self.last_used_a[s, a]
                 # The Dyna+ exploration bonus
+                if tau < 0:
+                    print(tau)
                 bonus = self.kappa * np.sqrt(tau)
             # Aside from Dyna-Q, this Dyna method also works with other update
             # methods, like Sarsa, in which case there is a need for providing
