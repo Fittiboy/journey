@@ -16,7 +16,7 @@ class ActionSelector(ABC):
     """Agent component that selects an action for the current state s."""
     
     @abstractmethod
-    def __call__(self, agent: 'Agent', s: int) -> int:
+    def __call__(self, agent: 'Agent', s: int, t: int) -> int:
         """
         Return an action to take, conditional on the current
         observation.
@@ -24,7 +24,7 @@ class ActionSelector(ABC):
         pass
 
     @abstractmethod
-    def action_probs(self, agent: 'Agent', s:int) -> np.ndarray:
+    def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
         """
         Return an array corresponding to the probabilities of each
         action being chosen.
@@ -58,10 +58,10 @@ class UpdateMethod(ABC):
 class Greedy(ActionSelector):
     """The greedy action selector."""
 
-    def __call__(self, agent: 'Agent', s: int) -> int:
+    def __call__(self, agent: 'Agent', s: int, t: int) -> int:
         return np.argmax(agent.Q[s])
 
-    def action_probs(self, agent: 'Agent', s:int) -> np.ndarray:
+    def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
         probs = np.zeros(len(agent.Q[s]))
 
         best_action = np.argmax(agent.Q[s])
@@ -76,17 +76,62 @@ class EpsilonGreedy(ActionSelector):
     epsilon: float
     rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
 
-    def __call__(self, agent: 'Agent', s: int) -> int:
+    def __call__(self, agent: 'Agent', s: int, t: int) -> int:
         if self.rng.random() < self.epsilon:
             return self.rng.integers(0, agent.num_actions)
         return np.argmax(agent.Q[s])
 
-    def action_probs(self, agent: 'Agent', s:int) -> np.ndarray:
+    def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
         num_actions = len(agent.Q[s])
         
         probs = np.ones(len(agent.Q[s])) * self.epsilon / num_actions
         
         best_action = np.argmax(agent.Q[s])
+        probs[best_action] += 1 - self.epsilon
+
+        return probs
+
+
+@dataclass
+class EpsilonGreedyExpBonus(ActionSelector):
+    epsilon: float
+    kappa: float = field(default=0.01)
+    last_used_a: np.ndarray = field(init=False, default=None)
+    rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
+
+    def __call__(self, agent: 'Agent', s: int, t: int) -> int:
+        if self.last_used_a is None:
+            # Initialize array that keeps track of timesteps during
+            # which actions were last taken
+            self.last_used_a = np.zeros_like(agent.Q)
+
+        Q_s = agent.Q[s].copy()
+        tau_s = t - self.last_used_a[s]
+        bonus = self.kappa + np.sqrt(tau_s)
+        Q_s += bonus
+        
+        if self.rng.random() < self.epsilon:
+            return self.rng.integers(0, agent.num_actions)
+
+        a = np.argmax(Q_s)
+        return a
+
+    def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
+        if self.last_used_a is None:
+            # Initialize array that keeps track of timesteps during
+            # which actions were last taken
+            self.last_used_a = np.zeros_like(agent.Q)
+
+        Q_s = agent.Q[s].copy()
+        tau_s = t - self.last_used_a[s]
+        bonus = self.kappa + np.sqrt(tau_s)
+        Q_s += bonus
+        
+        num_actions = len(Q_s)
+        
+        probs = np.ones(len(Q_s)) * self.epsilon / num_actions
+        
+        best_action = np.argmax(Q_s)
         probs[best_action] += 1 - self.epsilon
 
         return probs
@@ -474,9 +519,12 @@ class Dyna(UpdateMethod):
     plan_steps: int
     selector: ActionSelector
     learner: UpdateMethod
+    plus: bool = field(default=False)
+    kappa: float = field(default=0.01)
     model: dict = field(default_factory=dict)
+    last_used_a: np.ndarray = field(init=False, default=None)
     rng: np.random.Generator = field(default_factory=np.random.default_rng)
-    
+
     def __call__(
         self,
         agent: 'Agent',
@@ -484,12 +532,37 @@ class Dyna(UpdateMethod):
         t: int, T: int,
         ep: int, num_eps: int,
     ):
+        if self.plus and self.last_used_a is None:
+            self.last_used_a = np.zeros_like(agent.Q)
         done = t + 1 == T
+        # Update the model naively by storing transition
         self.model[(s, a)] = (r, s_, done)
+
+        # Record the timestep at which this action was last
+        # performed
+        if self.plus:
+            self.last_used_a[s, a] = t
+
+        # Perform actual planning
         for _ in range(self.plan_steps):
+            # Sample random S, A pair from the model
             s, a = self.rng.choice(list(self.model))
+            # Retreive reward last experienced from S, A
             r, s_, done = self.model[(s, a)]
-            a_ = self.selector(agent, s_)
+            # If running Dyna+, add the exploration bonus
+            if self.plus:
+                # How long it has been since the action was last
+                # chosen
+                tau = t - self.last_used_a[s, a]
+                # The Dyna+ exploration bonus
+                bonus = self.kappa * np.sqrt(tau)
+            # Aside from Dyna-Q, this Dyna method also works with other update
+            # methods, like Sarsa, in which case there is a need for providing
+            # A_{t+1} as well
+            a_ = self.selector(agent, s_, t)
+            # Planning involves simply learning from a simulated transition as if
+            # it was actually experienced again, so the learner is called with this
+            # synthetic data
             self.learner(agent, s, a, r, s_, a_, 0, 1 if done else inf, None, None)
 
 ################################
@@ -563,7 +636,7 @@ class Trainer:
                 
                 # Initialize the beginning of the episodes
                 s = env.reset()
-                a = agent.selector(agent, s)
+                a = agent.selector(agent, s, 0)
                 # The terminal time step, used for some update methods
                 T = inf
 
@@ -584,7 +657,7 @@ class Trainer:
                     if done:
                         T = t + 1
                     else:
-                        a_ = agent.selector(agent, s_)
+                        a_ = agent.selector(agent, s_, t)
     
                     # Update the agent's value estimates through direct LR
                     agent.learner(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
@@ -612,13 +685,13 @@ class Trainer:
         agent = self.agent
 
         s = env.reset()
-        a = agent.selector(agent, s)
+        a = agent.selector(agent, s, t)
         states = [s]
         actions = [a]
         rewards = [0]
-        for _ in range(max_steps):
+        for t in range(max_steps):
             s, r, done, *info = env.step(a)
-            a = agent.selector(agent, s)
+            a = agent.selector(agent, s, t)
             rewards.append(r)
             states.append(s)
             actions.append(a)
