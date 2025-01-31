@@ -468,8 +468,15 @@ class NoPlanner(UpdateMethod):
         pass
 
 
+@dataclass
 class Dyna(UpdateMethod):
-    """Does nothing"""
+    """Default Dyna planner"""
+    plan_steps: int
+    selector: ActionSelector
+    learner: UpdateMethod
+    model: dict = field(default_factory=dict)
+    rng: np.random.Generator = field(default_factory=np.random.default_rng)
+    
     def __call__(
         self,
         agent: 'Agent',
@@ -477,8 +484,13 @@ class Dyna(UpdateMethod):
         t: int, T: int,
         ep: int, num_eps: int,
     ):
-        """Update some of the agent's internal state."""
-        pass
+        done = t + 1 == T
+        self.model[(s, a)] = (r, s_, done)
+        for _ in range(self.plan_steps):
+            s, a = self.rng.choice(list(self.model))
+            r, s_, done = self.model[(s, a)]
+            a_ = self.selector(agent, s_)
+            self.learner(agent, s, a, r, s_, a_, 0, 1 if done else inf, None, None)
 
 ################################
 # Agent
