@@ -612,6 +612,42 @@ class Agent:
             return pickle.load(f)
 
     ### Evaulation methods ###
+    def smoothed_ep_lengths(self, trail_length: int) -> (list[int], list[int]):
+        """
+        Return xs and ys for plotting smoothed out episode lengths.
+
+        Args:
+            trail_length: Used to calculate the update weight, 1/trail_length
+        """
+        xs = np.arange(len(self.ep_lengths))
+        ys = np.zeros(len(self.ep_lengths))
+        ys[0] = self.ep_lengths[0]
+        
+        weight = 1 / trail_length
+        
+        for i in range(1, len(ys)):
+            ys[i] = weight * self.ep_lengths[i] + (1 - weight) * ys[i-1]
+
+        return xs, ys
+    
+    def smoothed_ep_returns(self, trail_length: int) -> (list[int], list[int]):
+        """
+        Return xs and ys for plotting smoothed out episode returns.
+
+        Args:
+            trail_length: Used to calculate the update weight, 1/trail_length
+        """
+        xs = np.arange(len(self.ep_returns))
+        ys = np.zeros(len(self.ep_returns))
+        ys[0] = self.ep_returns[0]
+        
+        weight = 1 / trail_length
+        
+        for i in range(1, len(ys)):
+            ys[i] = weight * self.ep_returns[i] + (1 - weight) * ys[i-1]
+
+        return xs, ys
+    
     def cumulative_eps(self) -> (list[int], list[int]):
         """Return xs and ys for plotting cumulative episodes over timesteps."""
         xs = np.cumsum(self.ep_lengths)
