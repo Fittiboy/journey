@@ -688,6 +688,23 @@ class Agent:
 
         return xs, ys
             
+    def play_episode(self, env, max_steps=100):
+        s = env.reset()
+        a = self.selector(self, s, 0)
+        states = [s]
+        actions = [a]
+        rewards = [0]
+        for t in range(max_steps):
+            s, r, done, *info = env.step(a)
+            a = self.selector(self, s, t)
+            rewards.append(r)
+            states.append(s)
+            actions.append(a)
+            if done:
+                break
+    
+        return states, actions, rewards
+        
 ################################
 # Training loop
 ################################
@@ -778,23 +795,3 @@ class Trainer:
                 
         except (KeyboardInterrupt, TrainingInterrupt):
             print(f"Training paused after {self.episodes} episodes.")
-
-    def play_episode(self, max_steps=100):
-        env = self.env
-        agent = self.agent
-
-        s = env.reset()
-        a = agent.selector(agent, s, 0)
-        states = [s]
-        actions = [a]
-        rewards = [0]
-        for t in range(max_steps):
-            s, r, done, *info = env.step(a)
-            a = agent.selector(agent, s, t)
-            rewards.append(r)
-            states.append(s)
-            actions.append(a)
-            if done:
-                break
-
-        return states, actions, rewards

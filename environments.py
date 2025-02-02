@@ -190,7 +190,8 @@ class RaceTrack(Environment):
             xv, yv = xv_old, yv_old
 
         to_go = [xv, yv]
-        s, reward, done = self.state, -1 , False
+        reward, done = -1, False
+        
         while to_go[0] != 0 or to_go[1] != 0:
             if to_go[0] != 0 and to_go[1] != 0:
                 d = 0 if np.random.random() > 0.5 else 1
@@ -207,15 +208,12 @@ class RaceTrack(Environment):
             to_go[d] -= sign
 
             x, y = int(x), int(y)
-            s = (x, y, int(xv), int(yv))
-            self.state = s
-
-            reward, done = -1, False
             
             # The car has left the bounds of the grid world itself
             if x not in range(self.track.shape[0]) or y not in range(self.track.shape[1]):
                 self.reset()
-                s, reward, done = self.state, -2, False
+                x, y, xv, yv = self.state
+                reward, done = -2, False
                 break
 
             # Type of tile the car is on
@@ -224,15 +222,20 @@ class RaceTrack(Environment):
             # The car has hit a boundary of the track
             if loc == 0:
                 self.reset()
-                s, reward, done = self.state, -2, False
+                x, y, xv, yv = self.state
+                reward, done = -2, False
+                break
             # The car has reached the finish line
             elif loc == 3:
+                self.reset()
+                x, y, xv, yv = self.state
                 reward, done = 100, True
+                break
 
-        if done:
-            self.reset()
+        if not done:
+            self.state = (x, y, xv, yv)
         
-        return s, reward, done
+        return self.state, reward, done
 
     def state_to_index(self, state):
         x, y, xv, yv = state

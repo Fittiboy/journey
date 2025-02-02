@@ -75,7 +75,7 @@ class TrainPool:
         rets = np.average(rets, axis=1)
 
         for i in range(num_agents):
-            self.agents[i].ep_lengths = eps[i]
-            self.agents[i].ep_returns = rets[i]
+            self.agents[i].ep_lengths = eps[i].tolist()
+            self.agents[i].ep_returns = rets[i].tolist()
 
         return self.agents
