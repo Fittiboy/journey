@@ -1,10 +1,13 @@
 import numpy as np
+import pickle
 
 from math import inf
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from itertools import count
+from pathlib import Path
+from datetime import datetime
 
 from tqdm.auto import tqdm
 
@@ -55,6 +58,7 @@ class UpdateMethod(ABC):
 # Action selectors
 ################################
 
+@dataclass
 class Greedy(ActionSelector):
     """The greedy action selector."""
 
@@ -467,6 +471,7 @@ class Schedule(UpdateMethod):
             raise ValueError(f"Invalid parameter path: {self.param_path}")
 
 
+@dataclass
 class LinearSchedule(Schedule):
     """A linear parameter schedule"""
     def weight(self, progress):
@@ -477,6 +482,7 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+@dataclass
 class SigmoidSchedule(Schedule):
     """A sigmoid parameter schedule"""
     scale: int = 6
@@ -489,7 +495,8 @@ class SigmoidSchedule(Schedule):
         return (sigmoid(SigmoidSchedule.scale * progress) + self.zero_shift) * self.scale_factor
 
 
-def UpDownSchedule(Schedule):
+@dataclass
+class UpDownSchedule(Schedule):
     """
     A parameter schedule that reaches final at 0.5, then going back
     down to initial towards the end.
@@ -501,6 +508,7 @@ def UpDownSchedule(Schedule):
 # Planners
 ################################
 
+@dataclass
 class NoPlanner(UpdateMethod):
     """Does nothing"""
     def __call__(
@@ -593,6 +601,31 @@ class Agent:
     def __post_init__(self):
         self.Q = np.zeros((self.num_states, self.num_actions))
 
+    def save(self, filepath):
+        state = asdict(self)
+        with open(filepath, "wb") as f:
+            pickle.dump(state, f)
+
+    @classmethod
+    def load(cls, filepath) -> 'Agent':
+        with open(filepath, "rb") as f:
+            return pickle.load(f)
+
+    ### Evaulation methods ###
+    def cumulative_eps(self) -> (list[int], list[int]):
+        """Return xs and ys for plotting cumulative episodes over timesteps."""
+        xs = np.cumsum(self.ep_lengths)
+        ys = list(range(len(self.ep_lengths)))
+
+        return xs, ys
+
+    def cumulative_returns(self) -> (list[int], list[int]):
+        """Return xs and ys for plotting cumulative rewards over episodes."""
+        xs = list(range(len(self.ep_lengths)))
+        ys = np.cumsum(self.ep_returns)
+
+        return xs, ys
+            
 ################################
 # Training loop
 ################################

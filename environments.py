@@ -66,6 +66,41 @@ class Environment(ABC):
         return filename
 
 ################################
+# Simple gridworld for testing
+################################
+
+class DummyGridworld(Environment):
+    """
+    Simple dummy gridworld for testing purposes.
+
+    Consists of n states, where states 0 and n-1 are terminal.
+    Transitioning to state 0 gives -1 reward, to n-1 +1.
+    """
+    def __init__(self, n, name="Dummy Gridworld"):
+        self.num_states = n
+        self.num_actions = 2
+
+        self.reset()
+
+    def reset(self):
+        self.state = self.n // 2
+        return self.state
+
+    def step(self, action):
+        s = self.state + action
+        reward, done = 0, False
+        
+        if self.state == n - 1:
+            reward, done = 1, True
+        elif self.state == 0:
+            reward, done = -1, True
+
+        if done:
+            self.reset()
+
+        return s, reward, done
+
+################################
 # Racetrack Environment
 ################################
 
@@ -171,21 +206,30 @@ class RaceTrack(Environment):
             to_go[d] -= sign
 
             x, y = int(x), int(y)
-            if x not in range(self.track.shape[0]) or y not in range(self.track.shape[1]):
-                self.reset()
-                return self.state, -2, False
-            loc = self.track[x,y]
-            # Hit a boundary, loss!
-            if loc == 0:
-                self.reset()
-                return self.state, -2, False
-            # Reached the finish line, win!
-            elif loc == 3:
-                self.state = (int(x), int(y), int(xv), int(yv))
-                return self.state, 100, True
+            s = (x, y, int(xv), int(yv))
+            self.state = s
 
-        self.state = (int(x), int(y), int(xv), int(yv))
-        return self.state, -1, False
+            # Type of tile the car is on
+            loc = self.track[x, y]
+
+            reward, done = -1, False
+            
+            # The car has left the bounds of the grid world itself
+            if x not in range(self.track.shape[0]) or y not in range(self.track.shape[1]):
+                s, reward, done = self.reset(), -2, False
+            
+            # The car has hit a boundary of the track
+            if loc == 0:
+                s, reward, done = self.reset(), -2, False
+                
+            # The car has reached the finish line
+            elif loc == 3:
+                reward, done = 100, True
+
+        if done:
+            self.reset()
+        
+        return s, reward, done
 
     def state_to_index(self, state):
         x, y, xv, yv = state
@@ -207,6 +251,7 @@ class RaceTrack(Environment):
     ################################
     # Specific racetracks
     ################################
+
     # 1 = Track
     # 2 = Start
     # 3 = Finish
