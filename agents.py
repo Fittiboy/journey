@@ -602,14 +602,36 @@ class Agent:
         self.Q = np.zeros((self.num_states, self.num_actions))
 
     def save(self, filepath):
-        state = asdict(self)
         with open(filepath, "wb") as f:
-            pickle.dump(state, f)
+            pickle.dump(self, f)
 
     @classmethod
     def load(cls, filepath) -> 'Agent':
         with open(filepath, "rb") as f:
             return pickle.load(f)
+            
+    @classmethod
+    def combinations(
+        cls,
+        num_states: int,
+        num_actions: int,
+        selectors: list[ActionSelector],
+        learners: list[UpdateMethod],
+        scheduless: list[list[Schedule]],
+        planners: list[UpdateMethod],
+    ):
+        agents = [
+            Agent(
+                num_states=num_states,
+                num_actions=num_actions,
+                selector=selector,
+                learner=learner,
+                schedules=schedules,
+                planner=planner,
+            ) for (selector, learner, schedules, planner) in param_space
+        ]
+    
+        return agents
 
     ### Evaulation methods ###
     def smoothed_ep_lengths(self, trail_length: int) -> (list[int], list[int]):
@@ -637,11 +659,13 @@ class Agent:
         Args:
             trail_length: Used to calculate the update weight, 1/trail_length
         """
+        
         xs = np.arange(len(self.ep_returns))
         ys = np.zeros(len(self.ep_returns))
         ys[0] = self.ep_returns[0]
         
-        weight = 1 / trail_length
+        weight = 1.0 / trail_length
+        assert 0 < weight <= 1
         
         for i in range(1, len(ys)):
             ys[i] = weight * self.ep_returns[i] + (1 - weight) * ys[i-1]
