@@ -77,22 +77,22 @@ class DummyGridworld(Environment):
     Transitioning to state 0 gives -1 reward, to n-1 +1.
     """
     def __init__(self, n, name="Dummy Gridworld"):
-        self.num_states = n
-        self.num_actions = 2
+        super().__init__(n, 2, name)
 
         self.reset()
 
     def reset(self):
-        self.state = self.n // 2
+        self.state = self.num_states // 2
         return self.state
 
     def step(self, action):
-        s = self.state + action
-        reward, done = 0, False
+        ds = -1 if action == 0 else 1
+        self.state += ds
+        s, reward, done = self.state, 0, False
         
-        if self.state == n - 1:
+        if s == self.num_states - 1:
             reward, done = 1, True
-        elif self.state == 0:
+        elif s == 0:
             reward, done = -1, True
 
         if done:
@@ -190,6 +190,7 @@ class RaceTrack(Environment):
             xv, yv = xv_old, yv_old
 
         to_go = [xv, yv]
+        s, reward, done = self.state, -1 , False
         while to_go[0] != 0 or to_go[1] != 0:
             if to_go[0] != 0 and to_go[1] != 0:
                 d = 0 if np.random.random() > 0.5 else 1
@@ -209,19 +210,21 @@ class RaceTrack(Environment):
             s = (x, y, int(xv), int(yv))
             self.state = s
 
-            # Type of tile the car is on
-            loc = self.track[x, y]
-
             reward, done = -1, False
             
             # The car has left the bounds of the grid world itself
             if x not in range(self.track.shape[0]) or y not in range(self.track.shape[1]):
-                s, reward, done = self.reset(), -2, False
+                self.reset()
+                s, reward, done = self.state, -2, False
+                break
+
+            # Type of tile the car is on
+            loc = self.track[x, y]
             
             # The car has hit a boundary of the track
             if loc == 0:
-                s, reward, done = self.reset(), -2, False
-                
+                self.reset()
+                s, reward, done = self.state, -2, False
             # The car has reached the finish line
             elif loc == 3:
                 reward, done = 100, True

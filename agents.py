@@ -402,7 +402,7 @@ class NStepTreeBackup(UpdateMethod):
                     # Get the probabilities for each action, and extract
                     # the probability for the action that was actually
                     # taken
-                    probs = selector.action_probs(agent, next_state)
+                    probs = selector.action_probs(agent, next_state, t)
                     pi = probs[next_action]
 
                     # Calculate expectation, excluding the action that was
