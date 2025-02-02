@@ -68,7 +68,7 @@ class TrainPool:
                 rets[i, run, :] = agent.ep_returns
             # We keep the training results from the last run
             # if run < num_runs - 1:
-            if True:
+            if run < num_runs - 1:
                 self.agents = deepcopy(untrained_agents)
 
         eps = np.average(eps, axis=1)

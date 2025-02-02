@@ -201,7 +201,7 @@ class ExpectedSarsa(UpdateMethod):
     ):
         Q = agent.Q
         if T > t + 1:
-            action_probs = agent.selector.action_probs(agent, s_)
+            action_probs = agent.selector.action_probs(agent, s_, t)
             expected_value = np.dot(action_probs, Q[s_])
             
             target = r + self.gamma * expected_value - Q[s, a]
@@ -330,7 +330,7 @@ class NStepExpectedSarsa(UpdateMethod):
                 update_state = self.states[index]
                 update_action = self.actions[index]
                 if T > t + 1:
-                    action_probs = agent.selector.action_probs(agent, s_)
+                    action_probs = agent.selector.action_probs(agent, s_, t)
                     expected_value = np.dot(action_probs, Q[s_])
                     
                     target += discount * Q[s_, a_] - Q[update_state, update_action]
@@ -784,7 +784,7 @@ class Trainer:
         agent = self.agent
 
         s = env.reset()
-        a = agent.selector(agent, s, t)
+        a = agent.selector(agent, s, 0)
         states = [s]
         actions = [a]
         rewards = [0]

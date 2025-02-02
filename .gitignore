@@ -5,3 +5,4 @@ misc/*.pdf
 RLbook2020.pdf
 steps.pdf
 *.pth
+train_pool_agent_*.pkl
