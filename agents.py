@@ -5,7 +5,7 @@ from math import inf
 from dataclasses import dataclass, field, asdict
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from itertools import count
+from itertools import count, product
 from pathlib import Path
 from datetime import datetime
 
@@ -620,6 +620,8 @@ class Agent:
         scheduless: list[list[Schedule]],
         planners: list[UpdateMethod],
     ):
+        param_space = product(selectors, learners, scheduless, planners)
+        
         agents = [
             Agent(
                 num_states=num_states,
@@ -763,7 +765,8 @@ class Trainer:
                         schedule(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
 
                     # Execute the agent's planning strategy
-                    agent.planner(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
+                    if agent.planner:
+                        agent.planner(agent, s, a, r, s_, a_, t, T, ep, num_episodes)
     
                     if done:
                         agent.ep_lengths.append(T)
