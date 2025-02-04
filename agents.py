@@ -75,122 +75,155 @@ class Greedy(ActionSelector):
 
 
 @dataclass
-class EpsilonGreedy(ActionSelector):
-    """The epsilon-greedy action selector."""
+class BaseEpsilonGreedy(ActionSelector):
+    """Base class for epsilon-greedy action selectors."""
     epsilon: float
     rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
 
     def __call__(self, agent: 'Agent', s: int, t: int) -> int:
         if self.rng.random() < self.epsilon:
             return self.rng.integers(0, agent.num_actions)
-        return np.argmax(agent.Q[s])
+        return self._get_greedy_action(agent, s, t)
 
     def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
         num_actions = len(agent.Q[s])
-        
-        probs = np.ones(len(agent.Q[s])) * self.epsilon / num_actions
-        
-        best_action = np.argmax(agent.Q[s])
+        probs = np.ones(num_actions) * self.epsilon / num_actions
+        best_action = self._get_greedy_action(agent, s, t)
         probs[best_action] += 1 - self.epsilon
-
         return probs
+
+    @abstractmethod
+    def _get_greedy_action(self, agent: 'Agent', s: int, t: int) -> int:
+        """Return the greedy action for the current state."""
+        pass
 
 
 @dataclass
-class EpsilonGreedyExpBonus(ActionSelector):
-    epsilon: float
+class EpsilonGreedy(BaseEpsilonGreedy):
+    """The epsilon-greedy action selector."""
+    def _get_greedy_action(self, agent: 'Agent', s: int, t: int) -> int:
+        return np.argmax(agent.Q[s])
+
+
+@dataclass
+class EpsilonGreedyExpBonus(BaseEpsilonGreedy):
+    """Epsilon-greedy with exploration bonus based on time since last use."""
     kappa: float = field(default=0.01)
     last_used_a: np.ndarray = field(init=False, default=None)
-    rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
 
-    def __call__(self, agent: 'Agent', s: int, t: int) -> int:
+    def _init_last_used(self, agent: 'Agent', t: int):
+        """Initialize or reset the last_used array if needed"""
         if self.last_used_a is None or t == 0:
-            # Initialize array that keeps track of timesteps during
-            # which actions were last taken
             self.last_used_a = np.zeros_like(agent.Q)
 
+    def _get_Q_with_bonus(self, agent: 'Agent', s: int, t: int) -> np.ndarray:
+        """Get Q-values with exploration bonus for the given state"""
+        self._init_last_used(agent, t)
         Q_s = agent.Q[s].copy()
         tau_s = t - self.last_used_a[s]
-        bonus = self.kappa + np.sqrt(tau_s)
-        Q_s += bonus
-        
-        if self.rng.random() < self.epsilon:
-            return self.rng.integers(0, agent.num_actions)
+        bonus = self.kappa * np.sqrt(tau_s)
+        return Q_s + bonus
 
+    def _get_greedy_action(self, agent: 'Agent', s: int, t: int) -> int:
+        Q_s = self._get_Q_with_bonus(agent, s, t)
         a = np.argmax(Q_s)
         self.last_used_a[s, a] = t
         return a
 
     def action_probs(self, agent: 'Agent', s:int, t: int) -> np.ndarray:
-        if self.last_used_a is None:
-            # Initialize array that keeps track of timesteps during
-            # which actions were last taken
-            self.last_used_a = np.zeros_like(agent.Q)
-
-        Q_s = agent.Q[s].copy()
-        tau_s = t - self.last_used_a[s]
-        bonus = self.kappa + np.sqrt(tau_s)
-        Q_s += bonus
-        
+        Q_s = self._get_Q_with_bonus(agent, s, t)
         num_actions = len(Q_s)
-        
-        probs = np.ones(len(Q_s)) * self.epsilon / num_actions
-        
+        probs = np.ones(num_actions) * self.epsilon / num_actions
         best_action = np.argmax(Q_s)
         probs[best_action] += 1 - self.epsilon
-
         return probs
+
+
+@dataclass
+class BaseOneStep(UpdateMethod):
+    """Base class for one-step update methods"""
+    alpha: float
+    gamma: float = field(default=1.0)
+
+    def __call__(
+        self,
+        agent: 'Agent',
+        s: int, a: int, r: float, s_: int, a_: int,
+        t: int, T: int,
+        ep: int, num_eps: int,
+    ):
+        Q = agent.Q
+        if T > t + 1:
+            next_value = self._get_next_value(agent, s_, a_, t)
+            target = r + self.gamma * next_value - Q[s, a]
+        else:
+            target = r - Q[s, a]
+        agent.Q[s, a] += self.alpha * target
+
+    @abstractmethod
+    def _get_next_value(self, agent: 'Agent', s_: int, a_: int, t: int) -> float:
+        """Calculate the value estimate for the next state."""
+        pass
+
+
+@dataclass
+class QLearning(BaseOneStep):
+    """Default Q-learning update method"""
+    def _get_next_value(self, agent: 'Agent', s_: int, a_: int, t: int) -> float:
+        return np.max(agent.Q[s_])
+
+
+@dataclass
+class Sarsa(BaseOneStep):
+    """Default Sarsa update method"""
+    def _get_next_value(self, agent: 'Agent', s_: int, a_: int, t: int) -> float:
+        return agent.Q[s_, a_]
+
+
+@dataclass
+class ExpectedSarsa(BaseOneStep):
+    """Default Expected Sarsa update method"""
+    def _get_next_value(self, agent: 'Agent', s_: int, a_: int, t: int) -> float:
+        action_probs = agent.selector.action_probs(agent, s_, t)
+        return np.dot(action_probs, agent.Q[s_])
 
 ################################
 # Value update methods
 ################################
 
 @dataclass
-class QLearning(UpdateMethod):
-    """Default Q-learning update method"""
+class BaseNStep(UpdateMethod):
+    """Base class for n-step methods"""
+    n: int
     alpha: float
     gamma: float = field(default=1.0)
+    states: list[int] = field(init=False)
+    actions: list[int] = field(init=False)
+    rewards: list[int] = field(init=False)
 
-    def __call__(
+    def __post_init__(self):
+        """Set up the n-step buffers"""
+        self.states = [None] * (self.n + 1)
+        self.actions = [None] * (self.n + 1)
+        self.rewards = [None] * (self.n + 1)
+
+    def _update_buffers(self, s: int, a: int, r: float, s_: int, a_: int, t: int):
+        """Store newly encountered step in buffers"""
+        self.states[t % (self.n+1)] = s
+        self.actions[t % (self.n+1)] = a
+        self.rewards[(t+1) % (self.n+1)] = r
+        self.states[(t+1) % (self.n+1)] = s_
+        self.actions[(t+1) % (self.n+1)] = a_
+
+    @abstractmethod
+    def _calculate_target(
         self,
         agent: 'Agent',
-        s: int, a: int, r: float, s_: int, a_: int,
-        t: int, T: int,
-        ep: int, num_eps: int,
-    ):
-        if T > t + 1:
-            target = r + self.gamma * np.max(agent.Q[s_]) - agent.Q[s, a]
-        else:
-            target = r - agent.Q[s, a]
-        agent.Q[s, a] += self.alpha * target
-
-
-@dataclass
-class Sarsa(UpdateMethod):
-    """Default Sarsa update method"""
-    alpha: float
-    gamma: float = field(default=1.0)
-
-    def __call__(
-        self,
-        agent: 'Agent',
-        s: int, a: int, r: float, s_: int, a_: int,
-        t: int, T: int,
-        ep: int, num_eps: int,
-    ):
-        Q = agent.Q
-        if T > t + 1:
-            target = r + self.gamma * Q[s_, a_] - Q[s, a]
-        else:
-            target = r - Q[s, a]
-        agent.Q[s, a] += self.alpha * target
-
-
-@dataclass
-class ExpectedSarsa(UpdateMethod):
-    """Default Sarsa update method"""
-    alpha: float
-    gamma: float = field(default=1.0)
+        tau: int, t: int, T: int,
+        s_: int, a_: int,
+    ) -> float:
+        """Calculate the update target for the specific n-step method."""
+        pass
 
     def __call__(
         self,
@@ -200,229 +233,159 @@ class ExpectedSarsa(UpdateMethod):
         ep: int, num_eps: int,
     ):
         Q = agent.Q
+        n = self.n
+
+        # Store newly encountered step in buffers
+        self._update_buffers(s, a, r, s_, a_, t)
+
+        # The first timestep for which to update Q
+        first_tau = t + 1 - n
+        if first_tau >= 0:
+            # If the episode has terminated, update for all remaining
+            # time steps.
+            tau_range_limit = T if T == t + 1 else first_tau + 1
+            for tau in range(first_tau, tau_range_limit):
+                index = tau % (n+1)
+                update_state = self.states[index]
+                update_action = self.actions[index]
+                
+                target = self._calculate_target(agent, tau, t, T, s_, a_)
+                agent.Q[update_state, update_action] += self.alpha * target
+
+
+@dataclass
+class NStepSarsa(BaseNStep):
+    """n-step Sarsa update method"""
+    def _calculate_target(
+        self,
+        agent: 'Agent',
+        tau: int, t: int, T: int,
+        s_: int, a_: int,
+    ) -> float:
+        Q = agent.Q
+        n = self.n
+        
+        # A running dicount factor
+        discount = 1
+        # Update target, into which the return is accumulated
+        target = 0
+        
+        # The return is truncated if the episode has terminated
+        k_range_limit = min(T, tau + n) + 1
+        for k in range(tau + 1, k_range_limit):
+            target += discount * self.rewards[k % (n+1)]
+            # Update running discount factor
+            discount *= self.gamma
+
+        # If the episode has not yet terminated, add the final term
+        # to the udpate target
+        index = tau % (n+1)
+        update_state = self.states[index]
+        update_action = self.actions[index]
+        if T > t + 1:
+            target += discount * Q[s_, a_] - Q[update_state, update_action]
+        else:
+            target += -Q[update_state, update_action]
+        
+        return target
+
+
+@dataclass
+class NStepExpectedSarsa(BaseNStep):
+    """n-step Expected Sarsa update method"""
+    def _calculate_target(
+        self,
+        agent: 'Agent',
+        tau: int, t: int, T: int,
+        s_: int, a_: int,
+    ) -> float:
+        Q = agent.Q
+        n = self.n
+        
+        # A running dicount factor
+        discount = 1
+        # Update target, into which the return is accumulated
+        target = 0
+        
+        # The return is truncated if the episode has terminated
+        k_range_limit = min(T, tau + n) + 1
+        for k in range(tau + 1, k_range_limit):
+            target += discount * self.rewards[k % (n+1)]
+            # Update running discount factor
+            discount *= self.gamma
+
+        # If the episode has not yet terminated, add the final term
+        # to the udpate target
+        index = tau % (n+1)
+        update_state = self.states[index]
+        update_action = self.actions[index]
         if T > t + 1:
             action_probs = agent.selector.action_probs(agent, s_, t)
             expected_value = np.dot(action_probs, Q[s_])
-            
-            target = r + self.gamma * expected_value - Q[s, a]
+            target += discount * expected_value - Q[update_state, update_action]
         else:
-            target = r - Q[s, a]
-        agent.Q[s, a] += self.alpha * target
+            target += -Q[update_state, update_action]
+        
+        return target
 
 
 @dataclass
-class NStepSarsa(UpdateMethod):
-    """n-step Sarsa update method"""
-    n: int
-    alpha: float
-    gamma: float = field(default=1.0)
-    states: list[int] = field(init=False)
-    actions: list[int] = field(init=False)
-    rewards: list[int] = field(init=False)
-
-    def __post_init__(self):
-        """Set up the n-step buffers"""
-        self.states = [None] * (self.n + 1)
-        self.actions = [None] * (self.n + 1)
-        self.rewards = [None] * (self.n + 1)
-
-    def __call__(
-        self,
-        agent: 'Agent',
-        s: int, a: int, r: float, s_: int, a_: int,
-        t: int, T: int,
-        ep: int, num_eps: int,
-    ):
-        Q = agent.Q
-        n = self.n
-
-        # Store newly encountered step in buffers
-        self.states[t % (n+1)] = s
-        self.actions[t % (n+1)] = a
-        self.rewards[(t+1) % (n+1)] = r
-
-        # The first timestep for which to update Q
-        first_tau = t + 1 - n
-        if first_tau >= 0:
-            # If the episode has terminated, update for all remaining
-            # time steps.
-            tau_range_limit = T if T == t + 1 else first_tau + 1
-            for tau in range(first_tau, tau_range_limit):
-                # A running dicount factor
-                discount = 1
-                # Update target, into which the return is accumulated
-                target = 0
-                
-                # The return is truncated if the episode has terminated
-                k_range_limit = min(T, tau + n) + 1
-                for k in range(tau + 1, k_range_limit):
-                    target += discount * self.rewards[k % (n+1)]
-
-                    # Update running discount factor
-                    discount *= self.gamma
-
-                # If the episode has not yet terminated, add the final term
-                # to the udpate target
-                index = tau % (n+1)
-                update_state = self.states[index]
-                update_action = self.actions[index]
-                if T > t + 1:
-                    target += discount * Q[s_, a_] - Q[update_state, update_action]
-                else:
-                    target += -Q[update_state, update_action]
-                agent.Q[update_state, update_action] += self.alpha * target
-
-
-@dataclass
-class NStepExpectedSarsa(UpdateMethod):
-    """n-step Sarsa update method"""
-    n: int
-    alpha: float
-    gamma: float = field(default=1.0)
-    states: list[int] = field(init=False)
-    actions: list[int] = field(init=False)
-    rewards: list[int] = field(init=False)
-
-    def __post_init__(self):
-        """Set up the n-step buffers"""
-        self.states = [None] * (self.n + 1)
-        self.actions = [None] * (self.n + 1)
-        self.rewards = [None] * (self.n + 1)
-
-    def __call__(
-        self,
-        agent: 'Agent',
-        s: int, a: int, r: float, s_: int, a_: int,
-        t: int, T: int,
-        ep: int, num_eps: int,
-    ):
-        Q = agent.Q
-        n = self.n
-
-        # Store newly encountered step in buffers
-        self.states[t % (n+1)] = s
-        self.actions[t % (n+1)] = a
-        self.rewards[(t+1) % (n+1)] = r
-
-        # The first timestep for which to update Q
-        first_tau = t + 1 - n
-        if first_tau >= 0:
-            # If the episode has terminated, update for all remaining
-            # time steps.
-            tau_range_limit = T if T == t + 1 else first_tau + 1
-            for tau in range(first_tau, tau_range_limit):
-                # A running dicount factor
-                discount = 1
-                # Update target, into which the return is accumulated
-                target = 0
-                
-                # The return is truncated if the episode has terminated
-                k_range_limit = min(T, tau + n) + 1
-                for k in range(tau + 1, k_range_limit):
-                    target += discount * self.rewards[k % (n+1)]
-
-                    # Update running discount factor
-                    discount *= self.gamma
-
-                # If the episode has not yet terminated, add the final term
-                # to the udpate target
-                index = tau % (n+1)
-                update_state = self.states[index]
-                update_action = self.actions[index]
-                if T > t + 1:
-                    action_probs = agent.selector.action_probs(agent, s_, t)
-                    expected_value = np.dot(action_probs, Q[s_])
-                    
-                    target += discount * Q[s_, a_] - Q[update_state, update_action]
-                else:
-                    target += -Q[update_state, update_action]
-                agent.Q[update_state, update_action] += self.alpha * target
-
-
-@dataclass
-class NStepTreeBackup(UpdateMethod):
+class NStepTreeBackup(BaseNStep):
     """n-step Tree Backup update method"""
-    n: int
-    alpha: float
-    gamma: float = field(default=1.0)
-    states: list[int] = field(init=False)
-    actions: list[int] = field(init=False)
-    rewards: list[int] = field(init=False)
-
-    def __post_init__(self):
-        """Set up the n-step buffers"""
-        self.states = [None] * (self.n + 1)
-        self.actions = [None] * (self.n + 1)
-        self.rewards = [None] * (self.n + 1)
-
-    def __call__(
+    def _calculate_target(
         self,
         agent: 'Agent',
-        s: int, a: int, r: float, s_: int, a_: int,
-        t: int, T: int,
-        ep: int, num_eps: int,
-    ):
+        tau: int, t: int, T: int,
+        s_: int, a_: int,
+    ) -> float:
         Q = agent.Q
         selector = agent.selector
         n = self.n
+        
+        # A running dicount factor
+        discount = 1
+        # Update target, into which the return is accumulated
+        target = 0
+        
+        # The return is truncated if the episode has terminated
+        k_range_limit = min(T, tau + n) + 1
+        for k in range(tau + 1, k_range_limit):
+            index = k % (n+1)
+            reward = self.rewards[index]
+            next_state = self.states[index]
+            next_action = self.actions[index]
+            
+            target += discount * reward
 
-        # Store newly encountered step in buffers
-        self.states[t % (n+1)] = s
-        self.actions[t % (n+1)] = a
-        self.rewards[(t+1) % (n+1)] = r
-        self.states[(t+1) % (n+1)] = s_
-        self.actions[(t+1) % (n+1)] = a_
+            # The final term includes only the terminal reward
+            if k == T:
+                break
 
-        # The first timestep for which to update Q
-        first_tau = t + 1 - n
-        if first_tau >= 0:
-            # If the episode has terminated, update for all remaining
-            # time steps.
-            tau_range_limit = T if T == t + 1 else first_tau + 1
-            for tau in range(first_tau, tau_range_limit):
-                # A running dicount factor
-                discount = 1
-                # Update target, into which the return is accumulated
-                target = 0
-                
-                # The return is truncated if the episode has terminated
-                k_range_limit = min(T, tau + n) + 1
-                for k in range(tau + 1, k_range_limit):
-                    index = k % (n+1)
-                    reward = self.rewards[index]
-                    next_state = self.states[index]
-                    next_action = self.actions[index]
-                    
-                    target += discount * reward
+            # Get the probabilities for each action, and extract
+            # the probability for the action that was actually
+            # taken
+            probs = selector.action_probs(agent, next_state, t)
+            pi = probs[next_action]
 
-                    # The final term includes only the terminal reward
-                    if k == T:
-                        break
+            # Calculate expectation, excluding the action that was
+            # actually taken (except for the final state, where the
+            # full expectation is used)
+            if k < k_range_limit - 1:
+                probs[next_action] = 0
+            expected_value = np.dot(probs, Q[next_state])
+            target += discount * self.gamma * expected_value
 
-                    # Get the probabilities for each action, and extract
-                    # the probability for the action that was actually
-                    # taken
-                    probs = selector.action_probs(agent, next_state, t)
-                    pi = probs[next_action]
+            # Update running discount factor
+            discount *= self.gamma * pi
 
-                    # Calculate expectation, excluding the action that was
-                    # actually taken (except for the final state, where the
-                    # full expectation is used)
-                    if k < k_range_limit - 1:
-                        probs[next_action] = 0
-                    expected_value = np.dot(probs, Q[next_state])
-                    target += discount * self.gamma * expected_value
-
-                    # Update running discount factor
-                    discount *= self.gamma * pi
-
-                # If the episode has not yet terminated, add the final term
-                # to the udpate target
-                index = tau % (n+1)
-                update_state = self.states[index]
-                update_action = self.actions[index]
-                target += -Q[update_state, update_action]
-                agent.Q[update_state, update_action] += self.alpha * target
+        # If the episode has not yet terminated, add the final term
+        # to the udpate target
+        index = tau % (n+1)
+        update_state = self.states[index]
+        update_action = self.actions[index]
+        target += -Q[update_state, update_action]
+        
+        return target
 
 ################################
 # Parameter schedules
