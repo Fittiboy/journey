@@ -599,7 +599,7 @@ class Agent:
         return agents
 
     ### Evaulation methods ###
-    def smoothed_ep_lengths(self, trail_length: int) -> (list[int], list[int]):
+    def smoothed_ep_lengths(self, trail_length: int) -> tuple[list[int], list[int]]:
         """
         Return xs and ys for plotting smoothed out episode lengths.
 
@@ -617,7 +617,7 @@ class Agent:
 
         return xs, ys
     
-    def smoothed_ep_returns(self, trail_length: int) -> (list[int], list[int]):
+    def smoothed_ep_returns(self, trail_length: int) -> tuple[list[int], list[int]]:
         """
         Return xs and ys for plotting smoothed out episode returns.
 
@@ -637,14 +637,14 @@ class Agent:
 
         return xs, ys
     
-    def cumulative_eps(self) -> (list[int], list[int]):
+    def cumulative_eps(self) -> tuple[list[int], list[int]]:
         """Return xs and ys for plotting cumulative episodes over timesteps."""
         xs = np.cumsum(self.ep_lengths)
         ys = list(range(len(self.ep_lengths)))
 
         return xs, ys
 
-    def cumulative_returns(self) -> (list[int], list[int]):
+    def cumulative_returns(self) -> tuple[list[int], list[int]]:
         """Return xs and ys for plotting cumulative rewards over episodes."""
         xs = list(range(len(self.ep_lengths)))
         ys = np.cumsum(self.ep_returns)
