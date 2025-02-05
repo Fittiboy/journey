@@ -393,6 +393,7 @@ dependencies:
   - torchtriton==3.1.0=py312
   - torchvision==0.20.1=py312_cu124
   - python==3.12.8=h9e4cc4f_1_cpython
+  - ipympl
 prefix: /home/fitti/.conda/envs/journey
 pip:
   - gymnasium[all]
