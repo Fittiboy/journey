@@ -80,6 +80,10 @@ class BaseEpsilonGreedy(ActionSelector):
     epsilon: float
     rng: np.random.Generator = field(default_factory = lambda: np.random.default_rng())
 
+    def __post_init__(self):
+        if not 0 <= self.epsilon <= 1:
+            raise ValueError(f"Epsilon must be in [0, 1], got {self.epsilon}")
+
     def __call__(self, agent: 'Agent', s: int, t: int) -> int:
         if self.rng.random() < self.epsilon:
             return self.rng.integers(0, agent.num_actions)
@@ -110,6 +114,11 @@ class EpsilonGreedyExpBonus(BaseEpsilonGreedy):
     """Epsilon-greedy with exploration bonus based on time since last use."""
     kappa: float = field(default=0.01)
     last_used_a: np.ndarray = field(init=False, default=None)
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.kappa < 0:
+            raise ValueError(f"Exploration bonus coefficient (kappa) must be non-negative, got {self.kappa}")
 
     def _init_last_used(self, agent: 'Agent', t: int):
         """Initialize or reset the last_used array if needed"""
@@ -144,6 +153,12 @@ class BaseOneStep(UpdateMethod):
     """Base class for one-step update methods"""
     alpha: float
     gamma: float = field(default=1.0)
+
+    def __post_init__(self):
+        if not 0 < self.alpha <= 1:
+            raise ValueError(f"Learning rate (alpha) must be in (0, 1], got {self.alpha}")
+        if not 0 <= self.gamma <= 1:
+            raise ValueError(f"Discount factor (gamma) must be in [0, 1], got {self.gamma}")
 
     def __call__(
         self,
@@ -203,6 +218,13 @@ class BaseNStep(UpdateMethod):
 
     def __post_init__(self):
         """Set up the n-step buffers"""
+        if not isinstance(self.n, int) or self.n < 1:
+            raise ValueError(f"n must be a positive integer, got {self.n}")
+        if not 0 < self.alpha <= 1:
+            raise ValueError(f"Learning rate (alpha) must be in (0, 1], got {self.alpha}")
+        if not 0 <= self.gamma <= 1:
+            raise ValueError(f"Discount factor (gamma) must be in [0, 1], got {self.gamma}")
+            
         self.states = [None] * (self.n + 1)
         self.actions = [None] * (self.n + 1)
         self.rewards = [None] * (self.n + 1)
