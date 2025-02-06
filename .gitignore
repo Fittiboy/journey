@@ -1,5 +1,59 @@
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# Jupyter Notebook
 .ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# Project specific
+*/data/*
+*/models/*
+*/results/*
+wandb/
+runs/
+logs/
+
+# Environment specific
+MineRL/
+*.log
+
+# OS specific
+.DS_Store
+.env
+.env.local
+Thumbs.db
+
 jupyter-ai-logs
 misc/*.pdf
 RLbook2020.pdf
