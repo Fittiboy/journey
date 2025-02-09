@@ -12,3 +12,4 @@ pygame>=2.5.0  # for simple environments
 pybullet>=3.2.5  # for robotics simulation
 minerl>=0.4.4  # for Minecraft RL
 tqdm>=4.66.0  # for progress bars 
+torchinfo>=1.8.0
