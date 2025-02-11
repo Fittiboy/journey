@@ -23,7 +23,6 @@ wheels/
 
 # Virtual Environment
 venv/
-ENV/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -32,9 +31,6 @@ ENV/
 # VSCode
 .vscode/
 *.code-workspace
-
-# PyCharm
-.idea/
 
 # Project specific
 */data/*
@@ -61,3 +57,4 @@ steps.pdf
 *.pth
 train_pool_agent_*.pkl
 OpenDeepResearcher
+papers
