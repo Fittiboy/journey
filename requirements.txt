@@ -1,15 +1,25 @@
-numpy>=1.24.0
-torch>=2.2.0
-gymnasium>=0.29.0
-stable-baselines3>=2.2.1
-wandb>=0.16.0  # for experiment tracking
-matplotlib>=3.8.0
-pandas>=2.2.0
-jupyter>=1.0.0
-pytest>=8.0.0  # for testing implementations
-tensorboard>=2.15.0  # for visualization
-pygame>=2.5.0  # for simple environments
-pybullet>=3.2.5  # for robotics simulation
-minerl>=0.4.4  # for Minecraft RL
-tqdm>=4.66.0  # for progress bars 
-torchinfo>=1.8.0
+--index-url https://download.pytorch.org/whl/cu126
+--extra-index-url https://pypi.org/simple
+
+numpy
+torch
+torchvision
+AutoROM[accept-rom-license]
+gymnasium[all]
+stable-baselines3[extra]
+wandb
+matplotlib
+pandas
+jupyter
+pytest
+tqdm
+torchinfo
+pytorch-ignite
+opencv-python
+ptan
+moviepy
+numpy
+tensorboard
+mypy
+torchrl
+ray[tune]
