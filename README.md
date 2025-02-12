@@ -1,33 +1,35 @@
 # Deep Reinforcement Learning Study Journey
 
-This repository contains my structured learning path for mastering Deep Reinforcement Learning, from fundamentals to frontier research topics.
+This repository contains my structured learning path for
+mastering Deep Reinforcement Learning, from fundamentals
+to frontier research topics.
 
 ## Learning Path
 
 ### Stage 1: Fundamentals
-- Markov Decision Processes (MDPs)
-- Value Functions and Policies
-- Dynamic Programming
-- Monte Carlo Methods
-- Temporal-Difference Learning
+- [x] Markov Decision Processes (MDPs)
+- [x] Value Functions and Policies
+- [x] Dynamic Programming
+- [x] Monte Carlo Methods
+- [x] Temporal-Difference Learning
 
 ### Stage 2: Deep RL Basics
-- Deep Q-Networks (DQN)
-- Policy Gradient Methods
-- Actor-Critic Architectures
-- TRPO, PPO
+- [x] Deep Q-Networks (DQN)
+- [ ] Policy Gradient Methods
+- [ ] Actor-Critic Architectures
+- [ ] TRPO, PPO
 
 ### Stage 3: Advanced Topics
-- Sparse Rewards & Exploration
-- Continuous Action Spaces
-- Lifelong Learning
-- Efficient Algorithms
-- Multi-Agent RL
-- Etc.
+- [ ] Sparse Rewards & Exploration
+- [ ] Continuous Action Spaces
+- [ ] Lifelong Learning
+- [ ] Efficient Algorithms
+- [ ] Multi-Agent RL
+- [ ] Etc.
 
 ### Stage 4: Projects
-- Minecraft RL using Project Malmo/MineRL
-- (Sim-to-Real) Robotics
+- [ ] Minecraft RL using Project Malmo/MineRL
+- [ ] \(Sim-to-Real) Robotics
 
 ## Resources
 
