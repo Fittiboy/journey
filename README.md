@@ -15,9 +15,9 @@ to frontier research topics.
 
 ### Stage 2: Deep RL Basics
 - [x] Deep Q-Networks (DQN)
-- [ ] Policy Gradient Methods
+- [x] Policy Gradient Methods (REINFORCE)
 - [ ] Actor-Critic Architectures
-- [ ] TRPO, PPO
+- [ ] TRPO, PPO, or other advanced policy gradient methods
 
 ### Stage 3: Advanced Topics
 - [ ] Sparse Rewards & Exploration
