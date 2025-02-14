@@ -1,17 +1,20 @@
 --index-url https://download.pytorch.org/whl/cu126
 --extra-index-url https://pypi.org/simple
 
-pufferlib[common]
+gymnasium[all]>=1.0.0
+AutoROM[accept-rom-license]
+stable-baselines3[extra]
 numpy
 torch
 torchvision
 torchrl
-AutoROM[accept-rom-license]
-stable-baselines3[extra]
 wandb
 matplotlib
 pandas
 jupyter
+jupyter-ai
+langchain-ollama
+langchain-openai
 pytest
 tqdm
 torchinfo
