@@ -1,11 +1,12 @@
 --index-url https://download.pytorch.org/whl/cu126
 --extra-index-url https://pypi.org/simple
 
+pufferlib[common]
 numpy
 torch
 torchvision
+torchrl
 AutoROM[accept-rom-license]
-gymnasium[all]
 stable-baselines3[extra]
 wandb
 matplotlib
@@ -14,12 +15,7 @@ jupyter
 pytest
 tqdm
 torchinfo
-pytorch-ignite
 opencv-python
-ptan
 moviepy
-numpy
 tensorboard
 mypy
-torchrl
-ray[tune]
