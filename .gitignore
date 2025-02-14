@@ -52,6 +52,7 @@ Thumbs.db
 
 jupyter-ai-logs
 misc/*.pdf
+misc/pufferlib/
 RLbook2020.pdf
 steps.pdf
 *.pth
