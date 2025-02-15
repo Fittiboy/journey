@@ -22,3 +22,4 @@ opencv-python
 moviepy
 tensorboard
 mypy
+ipynbname
