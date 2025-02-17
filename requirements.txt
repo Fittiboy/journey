@@ -4,6 +4,7 @@
 gymnasium[all]>=1.0.0
 AutoROM[accept-rom-license]
 stable-baselines3[extra]
+einops
 numpy
 torch
 torchvision
